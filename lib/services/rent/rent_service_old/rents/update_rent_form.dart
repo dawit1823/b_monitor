@@ -1,10 +1,12 @@
+//update_rent_form.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_service.dart';
-import '../../../property_mangement/new/property_service.dart';
+import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+
+import '../../../cloud/services/cloud_rent_service.dart';
 
 class UpdateRentPage extends StatefulWidget {
-  final DatabaseRent rent;
-  final List<DatabaseProfile> profiles;
+  final CloudRent rent;
+  final List<CloudProfile> profiles;
   final List<DatabaseProperty> properties;
 
   const UpdateRentPage({
@@ -15,7 +17,7 @@ class UpdateRentPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _UpdateRentPageState createState() => _UpdateRentPageState();
+  State<UpdateRentPage> createState() => _UpdateRentPageState();
 }
 
 class _UpdateRentPageState extends State<UpdateRentPage> {
@@ -50,13 +52,12 @@ class _UpdateRentPageState extends State<UpdateRentPage> {
   Future<void> _updateRent() async {
     if (_formKey.currentState!.validate()) {
       final updatedRent = await _rentService.updateRent(
-        rentId: widget.rent.rentId,
-        profileId: widget.rent.profileId,
-        pId: widget.rent.id,
-        contract: _contractController.text,
+        id: widget.rent.id,
+        contract: widget.rent.contract,
         rentAmount: double.parse(_rentAmountController.text),
         dueDate: _dueDateController.text,
         paymentStatus: _paymentStatusController.text,
+        endContract: '',
       );
 
       Navigator.pop(context, updatedRent);

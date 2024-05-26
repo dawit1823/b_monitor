@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/get_arguments.dart';
 import 'package:r_and_e_monitor/services/property_mangement/new/new_property.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/property_service.dart';
+
+import '../../cloud/cloud_data_models.dart';
+import '../../cloud/services/cloud_property_service.dart';
 
 class PropertyDetailsPage extends StatefulWidget {
   const PropertyDetailsPage({Key? key}) : super(key: key);
@@ -20,7 +22,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
   final TextEditingController _sizeController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  late DatabaseProperty? _property;
+  DatabaseProperty? _property;
   bool _isRented = false;
 
   @override
@@ -35,9 +37,9 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     _property = context.getArgument<DatabaseProperty>();
     if (_property != null) {
       _propertyTypeController.text = _property!.propertyType;
-      _floorNumberController.text = _property!.floorNumber.toString();
+      _floorNumberController.text = _property!.floorNumber;
       _propertyNumberController.text = _property!.propertyNumber;
-      _sizeController.text = _property!.sizeInSquareMeters.toString();
+      _sizeController.text = _property!.sizeInSquareMeters;
       _priceController.text = _property!.pricePerMonth.toString();
       _descriptionController.text = _property!.description;
       _isRented = _property!.isRented;
@@ -108,8 +110,9 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     if (!_validateInput()) return;
 
     try {
+      final property = _property;
       await _propertyService.updateProperty(
-        property: _property!,
+        id: property!.id,
         propertyType: _propertyTypeController.text,
         floorNumber: int.parse(_floorNumberController.text),
         propertyNumber: _propertyNumberController.text,

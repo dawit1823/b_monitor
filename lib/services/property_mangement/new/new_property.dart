@@ -1,6 +1,6 @@
 // new_property.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/property_service.dart';
+import 'package:r_and_e_monitor/services/cloud/services/cloud_property_service.dart';
 import '../../auth/auth_service.dart';
 
 class NewPropertyView extends StatefulWidget {
@@ -47,10 +47,10 @@ class _NewPropertyViewState extends State<NewPropertyView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Property'),
+        title: const Text('New Property'),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -105,20 +105,15 @@ class _NewPropertyViewState extends State<NewPropertyView> {
   Future<void> _createNewProperty() async {
     try {
       final currentUser = AuthService.firebase().currentUser!;
-      final email = currentUser.email!;
-
-      print('Creator Email: $email');
-
-      final creator = await _propertyService.createUser(email: email);
-      print('Creator: $creator');
+      final userId = currentUser.id;
 
       await _propertyService.createProperty(
-        creator: creator,
+        creator: userId,
         propertyType: _propertyTypeController.text,
-        floorNumber: int.parse(_numberOfFloorsController.text),
+        floorNumber: (_numberOfFloorsController.text),
         propertyNumber: _propertyNumberController.text,
-        sizeInSquareMeters: double.parse(_sizeController.text),
-        pricePerMonth: double.parse(_priceController.text),
+        sizeInSquareMeters: (_sizeController.text), //double.parse
+        pricePerMonth: (_priceController.text),
         description: _descriptionController.text,
         isRented: _isRented,
       );

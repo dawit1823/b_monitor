@@ -7,3 +7,5 @@ const newPropertyRoute = '/new-property-view/';
 const propertyDetailsPageRoute = '/property-details-page/';
 const landingPageRoute = '/landing-page/';
 const hompageRoute = '/';
+const createOrUpdateProfileRoute = '/createOrUpdateProperty';
+const createOrUpdateRentRoute = '/createOrUpdateRent';

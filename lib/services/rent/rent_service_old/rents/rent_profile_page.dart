@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_service.dart';
+import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+
+import '../../../cloud/services/cloud_rent_service.dart';
 
 class ReadProfilePage extends StatelessWidget {
-  final int profileId;
+  final String profileId;
   final RentService _profileService = RentService();
 
   ReadProfilePage({Key? key, required this.profileId}) : super(key: key);
@@ -11,8 +13,8 @@ class ReadProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('View Profile')),
-      body: FutureBuilder<DatabaseProfile>(
-        future: _profileService.getProfile(profileId: profileId),
+      body: FutureBuilder<CloudProfile>(
+        future: _profileService.getProfile(id: profileId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -1,18 +1,16 @@
-// read_rent_page.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/prolong_rent.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/read_property_page.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_penality.dart/rent_penality.dart';
+import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/additional_costs.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_rents.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/prolong_rent.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/read_property_page.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_profile_page.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_service.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/update_rent_form.dart';
-
-import '../../../property_mangement/new/property_service.dart';
+import '../services/cloud_property_service.dart';
+import '../services/cloud_rent_service.dart';
 
 class ReadRentPage extends StatelessWidget {
-  final int rentId;
+  final String rentId;
   final RentService _rentService = RentService();
-  //final RentService _profileService = RentService();
   final PropertyService _propertyService = PropertyService();
 
   ReadRentPage({Key? key, required this.rentId}) : super(key: key);
@@ -21,8 +19,8 @@ class ReadRentPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('View Rent')),
-      body: FutureBuilder<DatabaseRent>(
-        future: _rentService.getRent(rentId: rentId),
+      body: FutureBuilder<CloudRent>(
+        future: _rentService.getRent(id: rentId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -32,8 +30,8 @@ class ReadRentPage extends StatelessWidget {
             return const Center(child: Text('No data found'));
           } else {
             final rent = snapshot.data!;
-            return FutureBuilder<DatabaseProfile>(
-              future: _rentService.getProfile(profileId: rent.profileId),
+            return FutureBuilder<CloudProfile>(
+              future: _rentService.getProfile(id: rent.profileId),
               builder: (context, profileSnapshot) {
                 if (profileSnapshot.connectionState ==
                     ConnectionState.waiting) {
@@ -45,7 +43,7 @@ class ReadRentPage extends StatelessWidget {
                 } else {
                   final profile = profileSnapshot.data!;
                   return FutureBuilder<DatabaseProperty>(
-                    future: _propertyService.getProperty(id: rent.id),
+                    future: _propertyService.getProperty(id: rent.propertyId),
                     builder: (context, propertySnapshot) {
                       if (propertySnapshot.connectionState ==
                           ConnectionState.waiting) {
@@ -74,7 +72,7 @@ class ReadRentPage extends StatelessWidget {
                                   );
                                 },
                                 child: Text(
-                                  'Profile: ${profile.companyName ?? profile.firstName}',
+                                  'Profile: ${profile.companyName != "" ? profile.companyName : profile.firstName}',
                                   style: const TextStyle(
                                     color: Colors.blue,
                                     decoration: TextDecoration.underline,
@@ -86,8 +84,8 @@ class ReadRentPage extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          ReadPropertyPage(propertyId: rent.id),
+                                      builder: (context) => ReadPropertyPage(
+                                          propertyId: rent.propertyId),
                                     ),
                                   );
                                 },
@@ -102,21 +100,25 @@ class ReadRentPage extends StatelessWidget {
                               Text('Contract: ${rent.contract}'),
                               Text('Rent Amount: ${rent.rentAmount}'),
                               Text('Due Date: ${rent.dueDate}'),
+                              Text('Rent Status: ${rent.endContract}'),
                               Text('Payment Status: ${rent.paymentStatus}'),
                               const SizedBox(height: 20),
                               ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
+                                  final profiles = await _rentService
+                                      .allProfiles(creatorId: rent.creatorId)
+                                      .first;
+                                  final properties = await _propertyService
+                                      .allProperties(creatorId: rent.creatorId)
+                                      .first;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => UpdateRentPage(
+                                      builder: (context) =>
+                                          CreateOrUpdateRentView(
                                         rent: rent,
-                                        profiles: [
-                                          profile
-                                        ], // Pass the actual profiles list
-                                        properties: [
-                                          property
-                                        ], // Pass the actual properties list
+                                        profiles: profiles.toList(),
+                                        properties: properties.toList(),
                                       ),
                                     ),
                                   ).then((updatedRent) {
@@ -135,12 +137,13 @@ class ReadRentPage extends StatelessWidget {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          RentPenaltyPage(rentId: rentId),
+                                          AdditionalCostsPage(rentId: rentId),
                                     ),
                                   );
                                 },
-                                child: const Text('View Penalties'),
+                                child: const Text('Additional Costs'),
                               ),
+                              const SizedBox(height: 20),
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
@@ -152,6 +155,11 @@ class ReadRentPage extends StatelessWidget {
                                   );
                                 },
                                 child: const Text('Prolong Rent'),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: () => _endContract(context, rent),
+                                child: const Text('End Contract'),
                               ),
                             ],
                           ),
@@ -168,16 +176,30 @@ class ReadRentPage extends StatelessWidget {
     );
   }
 
-  void _loadUpdatedRent(BuildContext context, int rentId) {
-    _rentService.getRent(rentId: rentId).then((rent) {
-      if (rent != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReadRentPage(rentId: rentId),
-          ),
-        );
-      }
-    });
+  void _loadUpdatedRent(BuildContext context, String rentId) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReadRentPage(rentId: rentId),
+      ),
+    );
+  }
+
+  Future<void> _endContract(BuildContext context, CloudRent rent) async {
+    try {
+      await _rentService.updateRent(
+        id: rent.id,
+        rentAmount: rent.rentAmount,
+        contract: rent.contract,
+        dueDate: rent.dueDate,
+        endContract: 'Contract_Ended',
+        paymentStatus: rent.paymentStatus,
+      );
+      _loadUpdatedRent(context, rent.id);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to end contract: $e')),
+      );
+    }
   }
 }

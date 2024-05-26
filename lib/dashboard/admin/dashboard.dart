@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/enums/menu_action.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/properties_view.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/property_service.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_list.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rent_list.dart';
+import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_view.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/rent_list.dart';
 
-import '../../services/rent/rent_service_old/rents/create_rent_form.dart';
-import '../../services/rent/rent_service_old/rents/rent_list_view.dart';
-import '../../services/rent/rent_service_old/profile/new_profile.dart';
-import '../../services/rent/rent_service_old/rents/rent_service.dart';
+import '../../services/cloud/property/property_view.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -85,7 +80,7 @@ class AdminDashboard extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
@@ -98,22 +93,22 @@ class AdminDashboard extends StatelessWidget {
               ),
             ),
             ListTile(
-              title: Text('Add Member'),
+              title: const Text('Add Profile'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProfileList()),
+                  MaterialPageRoute(builder: (context) => const ProfileView()),
                 );
               },
             ),
             ListTile(
-              title: Text('Rent manager'),
+              title: const Text('property View'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => PropertiesView()),
+                  MaterialPageRoute(builder: (context) => const PropertyView()),
                 );
               },
             ),
@@ -128,22 +123,22 @@ class AdminDashboard extends StatelessWidget {
             //   },
             // ),
             ListTile(
-              title: Text('List Rent'),
+              title: const Text('List Rent'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => RentList()),
+                  MaterialPageRoute(builder: (context) => const RentList()),
                 );
               },
             ),
             ListTile(
-              title: Text('new profile '),
+              title: const Text('new profile '),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => NewProfile()),
+                  MaterialPageRoute(builder: (context) => const ProfileView()),
                 );
               },
             ),
@@ -151,10 +146,24 @@ class AdminDashboard extends StatelessWidget {
           ],
         ),
       ),
-      body: const Center(
-        child: Text(
-          'Welcome to the Admin Dashboard!',
-          style: TextStyle(fontSize: 24),
+      body: Padding(
+        padding: const EdgeInsets.all(0.0),
+        child: SizedBox(
+          // Wrap Card with SizedBox for explicit size
+          width: double.infinity, // Set desired width
+          height: double.infinity, // Set desired height
+          child: Card(
+            elevation: 5.0,
+            shape: ContinuousRectangleBorder(
+              borderRadius: BorderRadius.circular(0.0),
+            ),
+            child: const Center(
+              child: Text(
+                'Welcome to the Admin Dashboard!',
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
+          ),
         ),
       ),
     );

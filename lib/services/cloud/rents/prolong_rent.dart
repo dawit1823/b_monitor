@@ -1,6 +1,7 @@
 // prolong_rent.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_service.dart';
+
+import '../services/cloud_rent_service.dart';
 
 class ProlongRentFormWidget extends StatefulWidget {
   const ProlongRentFormWidget({
@@ -8,7 +9,7 @@ class ProlongRentFormWidget extends StatefulWidget {
     required this.rentId,
   }) : super(key: key);
 
-  final int rentId;
+  final String rentId;
 
   @override
   State<ProlongRentFormWidget> createState() => _ProlongRentFormWidgetState();
@@ -29,7 +30,7 @@ class _ProlongRentFormWidgetState extends State<ProlongRentFormWidget> {
   }
 
   Future<void> _loadRentData() async {
-    final rent = await _rentService.getRent(rentId: widget.rentId);
+    final rent = await _rentService.getRent(id: widget.rentId);
     endDateController.text = rent.dueDate;
   }
 
@@ -86,19 +87,18 @@ class _ProlongRentFormWidgetState extends State<ProlongRentFormWidget> {
 
   Future<void> _prolongRent() async {
     try {
-      final rent = await _rentService.getRent(rentId: widget.rentId);
+      final rent = await _rentService.getRent(id: widget.rentId);
       final newEndDate = endDateController.text;
       final newDueDate = newDueDateController.text;
 
       await _rentService.updateRent(
-        rentId: widget.rentId,
-        profileId: rent.profileId,
-        pId: rent.id,
+        id: widget.rentId,
         contract:
             'Start: ${rent.contract.split(',')[0].split(': ')[1]}, End: $newEndDate',
         rentAmount: rent.rentAmount,
         dueDate: newDueDate,
         paymentStatus: rent.paymentStatus,
+        endContract: rent.endContract,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

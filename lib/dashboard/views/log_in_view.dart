@@ -23,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+
     _emailController.addListener(_validateInputs);
     _passwordController.addListener(_validateInputs);
   }
@@ -53,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
       final user = AuthService.firebase().currentUser;
       if (user?.isEmailVerified ?? false) {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          propertiesRoute,
+          adminDashboardRoute,
           (route) => false,
         );
       } else {

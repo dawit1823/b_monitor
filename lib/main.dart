@@ -7,9 +7,10 @@ import 'package:r_and_e_monitor/dashboard/views/sign_up_view.dart';
 import 'package:r_and_e_monitor/dashboard/views/log_in_view.dart';
 import 'package:r_and_e_monitor/landing_page.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
+import 'package:r_and_e_monitor/services/cloud/property/property_view.dart';
 import 'package:r_and_e_monitor/services/property_mangement/new/new_property.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/properties_view.dart';
 import 'package:r_and_e_monitor/services/property_mangement/new/property_details_page.dart';
+import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/create_or_update_profile.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,10 +28,12 @@ void main() {
       signUpRoute: (context) => const AdminSignUpView(),
       adminDashboardRoute: (context) => const AdminDashboard(),
       emailVerifyRoute: (context) => const VerifyEmailView(),
-      propertiesRoute: (context) => const PropertiesView(),
+      propertiesRoute: (context) => const PropertyView(),
       newPropertyRoute: (context) => const NewPropertyView(),
       propertyDetailsPageRoute: (context) => const PropertyDetailsPage(),
       landingPageRoute: (context) => const LandingPage(),
+      createOrUpdateProfileRoute: (context) => const CreateOrUpdateProfile(),
+      //createOrUpdateRentRoute: (context) => const CreateOrUpdateRentView(),
     },
   ));
 }

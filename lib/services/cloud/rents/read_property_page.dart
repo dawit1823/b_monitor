@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../../property_mangement/new/property_service.dart';
+import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
+import '../cloud_data_models.dart';
+import '../services/cloud_property_service.dart';
 
 class ReadPropertyPage extends StatelessWidget {
-  final int propertyId;
+  final String propertyId;
   final PropertyService _propertyService = PropertyService();
 
   ReadPropertyPage({Key? key, required this.propertyId}) : super(key: key);
@@ -29,12 +30,22 @@ class ReadPropertyPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Property Type: ${property.propertyType}'),
-                  Text('floor Number: ${property.floorNumber}'),
-                  Text('property Number: ${property.propertyNumber}'),
-                  Text('price Per Month: ${property.pricePerMonth}'),
-                  Text('size In Square Meters: ${property.sizeInSquareMeters}'),
-                  Text('description: ${property.description}'),
+                  Text('Floor Number: ${property.floorNumber}'),
+                  Text('Property Number: ${property.propertyNumber}'),
+                  Text('Price Per Month: ${property.pricePerMonth}'),
+                  Text('Size in Square Meters: ${property.sizeInSquareMeters}'),
+                  Text('Description: ${property.description}'),
                   Text('Rented: ${property.isRented ? "Rented" : "Free"}'),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(
+                        newPropertyRoute,
+                        arguments: property,
+                      );
+                    },
+                    child: const Text('Update Property'),
+                  ),
                 ],
               ),
             );

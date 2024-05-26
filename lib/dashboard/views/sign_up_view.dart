@@ -1,7 +1,6 @@
 //sign_up_view.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
-import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/error_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_exceptions.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
