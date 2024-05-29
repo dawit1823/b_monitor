@@ -1,3 +1,4 @@
+//read_rent_page.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/additional_costs.dart';
@@ -5,6 +6,8 @@ import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_rents.dart
 import 'package:r_and_e_monitor/services/cloud/rents/prolong_rent.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/read_property_page.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_profile_page.dart';
+import '../reports/create_or_update_report_view.dart';
+import '../reports/report_view_page.dart';
 import '../services/cloud_property_service.dart';
 import '../services/cloud_rent_service.dart';
 
@@ -160,6 +163,33 @@ class ReadRentPage extends StatelessWidget {
                               ElevatedButton(
                                 onPressed: () => _endContract(context, rent),
                                 child: const Text('End Contract'),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CreateOrUpdateReportView(
+                                              rentId: rentId),
+                                    ),
+                                  );
+                                },
+                                child: const Text('Create or Update Report'),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ReportViewPage(rentId: rentId),
+                                    ),
+                                  );
+                                },
+                                child: const Text('View Reports'),
                               ),
                             ],
                           ),

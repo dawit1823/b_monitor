@@ -1,5 +1,6 @@
 //main.dart
 import 'package:flutter/material.dart';
+//import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:r_and_e_monitor/dashboard/admin/dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
@@ -15,6 +16,7 @@ import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/create_or
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   //await AuthService.firebase().initialize(); // Initialize Firebase first
+  //dotenv.load(fileName: ".env");
   runApp(MaterialApp(
     title: 'Admin Signup Demo',
     theme: ThemeData(

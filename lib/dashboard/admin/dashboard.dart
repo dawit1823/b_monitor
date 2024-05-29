@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/enums/menu_action.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_view.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/rent_list.dart';
-
-import '../../services/cloud/property/property_view.dart';
+import 'package:r_and_e_monitor/services/cloud/property/property_view.dart';
+import '../../services/cloud/company/list_company.dart';
+import '../../services/rent/rent_service_old/profile/profile_view.dart'; // Import the listCompany.dart file
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -35,18 +35,6 @@ class AdminDashboard extends StatelessWidget {
       },
     ).then((value) => value ?? false);
   }
-
-  // void navigateToCreateRent(BuildContext context,
-  //     List<DatabaseProfile> profiles, List<DatabaseProperty> properties) {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //         builder: (context) => CreateRentFormWidget(
-  //               profiles: profiles,
-  //               properties: properties,
-  //             )),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +91,7 @@ class AdminDashboard extends StatelessWidget {
               },
             ),
             ListTile(
-              title: const Text('property View'),
+              title: const Text('Property View'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -112,16 +100,6 @@ class AdminDashboard extends StatelessWidget {
                 );
               },
             ),
-            // ListTile(
-            //   title: Text('Create Rent'),
-            //   onTap: () {
-            //     Navigator.pop(context);
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(builder: (context) => CreateRentFormWidget()),
-            //     );
-            //   },
-            // ),
             ListTile(
               title: const Text('List Rent'),
               onTap: () {
@@ -133,12 +111,12 @@ class AdminDashboard extends StatelessWidget {
               },
             ),
             ListTile(
-              title: const Text('new profile '),
+              title: const Text('Companies'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ProfileView()),
+                  MaterialPageRoute(builder: (context) => const ListCompany()),
                 );
               },
             ),
@@ -149,9 +127,8 @@ class AdminDashboard extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(0.0),
         child: SizedBox(
-          // Wrap Card with SizedBox for explicit size
-          width: double.infinity, // Set desired width
-          height: double.infinity, // Set desired height
+          width: double.infinity,
+          height: double.infinity,
           child: Card(
             elevation: 5.0,
             shape: ContinuousRectangleBorder(

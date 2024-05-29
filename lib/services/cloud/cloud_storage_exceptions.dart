@@ -39,3 +39,7 @@ class UserNotLoggedInException implements Exception {}
 class UserShouldBeSetBeforeReadingAllNotes implements Exception {}
 
 class CouldNotFindExpenseException implements Exception {}
+
+class CouldNotFindReportException implements Exception {}
+
+class CouldNotFindCompanyException implements Exception {}

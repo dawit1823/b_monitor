@@ -77,60 +77,70 @@ class _RentListState extends State<RentList> {
           : StreamBuilder(
               stream: _rentService.allRents(creatorId: userId),
               builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting:
-                  case ConnectionState.active:
-                    if (snapshot.hasData) {
-                      final allRents = snapshot.data as Iterable<CloudRent>;
-                      return ListView.builder(
-                        itemCount: allRents.length,
-                        itemBuilder: (context, index) {
-                          final rent = allRents.elementAt(index);
-                          return ListTile(
-                            title: Text(rent.contract),
-                            subtitle: Text('Due: ${rent.dueDate}'),
-                            onTap: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) =>
-                                    ReadRentPage(rentId: rent.id),
-                              ));
-                            },
-                            onLongPress: () {
-                              if (_profiles.isNotEmpty &&
-                                  _properties.isNotEmpty) {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => CreateOrUpdateRentView(
-                                    rent: rent,
-                                    profiles: _profiles,
-                                    properties: _properties,
-                                  ),
-                                ));
-                              } else {
-                                showErrorDialog(context,
-                                    'Profiles and properties are not loaded yet.');
-                              }
-                            },
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () async {
-                                final shouldDelete =
-                                    await showDeleteDialog(context);
-                                if (shouldDelete) {
-                                  await _rentService.deleteRent(id: rent.id);
-                                }
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                  default:
-                    return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasData) {
+                  final allRents = snapshot.data as Iterable<CloudRent>;
+                  final contractEndedRents = allRents
+                      .where((rent) => rent.endContract == 'Contract_Ended');
+                  final contractActiveRents = allRents
+                      .where((rent) => rent.endContract == 'Contract_Active');
+                  final contractProlongedRents = allRents.where(
+                      (rent) => rent.endContract == 'Contract_Prolonged');
+
+                  return ListView(
+                    children: [
+                      _buildRentSection('Contract Ended', contractEndedRents),
+                      _buildRentSection('Contract Active', contractActiveRents),
+                      _buildRentSection(
+                          'Contract Prolonged', contractProlongedRents),
+                    ],
+                  );
+                } else {
+                  return const Center(child: Text('No rents available.'));
                 }
               },
             ),
+    );
+  }
+
+  Widget _buildRentSection(String title, Iterable<CloudRent> rents) {
+    return ExpansionTile(
+      title: Text(title),
+      children: rents.map((rent) {
+        return ListTile(
+          title: Text(rent.contract),
+          subtitle: Text('Due: ${rent.dueDate}'),
+          onTap: () {
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => ReadRentPage(rentId: rent.id),
+            ));
+          },
+          onLongPress: () {
+            if (_profiles.isNotEmpty && _properties.isNotEmpty) {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => CreateOrUpdateRentView(
+                  rent: rent,
+                  profiles: _profiles,
+                  properties: _properties,
+                ),
+              ));
+            } else {
+              showErrorDialog(
+                  context, 'Profiles and properties are not loaded yet.');
+            }
+          },
+          trailing: IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              final shouldDelete = await showDeleteDialog(context);
+              if (shouldDelete) {
+                await _rentService.deleteRent(id: rent.id);
+              }
+            },
+          ),
+        );
+      }).toList(),
     );
   }
 }

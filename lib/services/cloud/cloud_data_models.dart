@@ -142,3 +142,58 @@ class CloudExpenses {
         discription = doc['discription'],
         date = doc['date'];
 }
+
+class CloudReports {
+  final String reportId;
+  final String rentId;
+  final String reportTitle;
+  final String reportContent;
+  final String carbonCopy;
+  final String reportDate;
+
+  const CloudReports({
+    required this.reportId,
+    required this.rentId,
+    required this.reportTitle,
+    required this.reportContent,
+    required this.carbonCopy,
+    required this.reportDate,
+  });
+
+  CloudReports.fromFirestore(DocumentSnapshot doc)
+      : reportId = doc.id,
+        rentId = doc['rentId'],
+        reportTitle = doc['report_title'],
+        reportContent = doc['report_content'],
+        carbonCopy = doc['carbonCopy'],
+        reportDate = doc['report_date'];
+}
+
+class CloudCompany {
+  final String id;
+  final String creatorId;
+  final String companyName;
+  final String companyOwner;
+  final String emailAddress;
+  final String phone;
+  final String address;
+
+  const CloudCompany({
+    required this.id,
+    required this.creatorId,
+    required this.companyName,
+    required this.companyOwner,
+    required this.emailAddress,
+    required this.phone,
+    required this.address,
+  });
+
+  CloudCompany.fromFirestore(DocumentSnapshot doc)
+      : id = doc.id,
+        creatorId = doc['creatorId'],
+        companyName = doc['companyName'],
+        companyOwner = doc['companyOwner'],
+        emailAddress = doc['emailAddress'],
+        phone = doc['phone'],
+        address = doc['address'];
+}

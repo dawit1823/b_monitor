@@ -1,4 +1,3 @@
-//cloud_rent_service.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -14,6 +13,10 @@ class RentService {
       FirebaseFirestore.instance.collection('rents');
   final CollectionReference expenses =
       FirebaseFirestore.instance.collection('expenses');
+  final CollectionReference reports =
+      FirebaseFirestore.instance.collection('reports');
+  final CollectionReference companies =
+      FirebaseFirestore.instance.collection('companies');
 
   Future<CloudProfile> createProfile({
     required String creatorId,
@@ -309,6 +312,167 @@ class RentService {
         await expenses.where('rentId', isEqualTo: rentId).get();
     return querySnapshot.docs
         .map((doc) => CloudExpenses.fromFirestore(doc))
+        .toList();
+  }
+
+  // CloudReports methods
+
+  Future<CloudReports> createReport({
+    required String rentId,
+    required String reportTitle,
+    required String reportContent,
+    required String carbonCopy,
+    required String reportDate,
+  }) async {
+    final docRef = await _firebaseStorage.addDocument(
+      collectionPath: 'reports',
+      data: {
+        'rentId': rentId,
+        'report_title': reportTitle,
+        'report_content': reportContent,
+        'carbonCopy': carbonCopy,
+        'report_date': reportDate,
+      },
+    );
+
+    return CloudReports(
+      reportId: docRef.id,
+      rentId: rentId,
+      reportTitle: reportTitle,
+      reportContent: reportContent,
+      carbonCopy: carbonCopy,
+      reportDate: reportDate,
+    );
+  }
+
+  Future<CloudReports> getReport({required String reportId}) async {
+    final docSnapshot = await _firebaseStorage.getDocument(
+      collectionPath: 'reports',
+      documentId: reportId,
+    );
+    if (!docSnapshot.exists) throw CouldNotFindReportException();
+    return CloudReports.fromFirestore(docSnapshot);
+  }
+
+  Future<CloudReports> updateReport({
+    required String reportId,
+    required String reportTitle,
+    required String reportContent,
+    required String carbonCopy,
+    required String reportDate,
+  }) async {
+    await _firebaseStorage.updateDocument(
+      collectionPath: 'reports',
+      documentId: reportId,
+      data: {
+        'report_title': reportTitle,
+        'report_content': reportContent,
+        'carbonCopy': carbonCopy,
+        'report_date': reportDate,
+      },
+    );
+    return await getReport(reportId: reportId);
+  }
+
+  Future<void> deleteReport({required String reportId}) async {
+    await _firebaseStorage.deleteDocument(
+      collectionPath: 'reports',
+      documentId: reportId,
+    );
+  }
+
+  Stream<Iterable<CloudReports>> allReports({required String rentId}) {
+    return reports
+        .where('rentId', isEqualTo: rentId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => CloudReports.fromFirestore(doc));
+    });
+  }
+
+// New methods for managing companies
+  Future<CloudCompany> createCompany({
+    required String creatorId,
+    required String companyName,
+    required String companyOwner,
+    required String emailAddress,
+    required String phone,
+    required String address,
+  }) async {
+    final docRef = await _firebaseStorage.addDocument(
+      collectionPath: 'companies',
+      data: {
+        'creatorId': creatorId,
+        'companyName': companyName,
+        'companyOwner': companyOwner,
+        'emailAddress': emailAddress,
+        'phone': phone,
+        'address': address,
+      },
+    );
+
+    return CloudCompany(
+      id: docRef.id,
+      creatorId: creatorId,
+      companyName: companyName,
+      companyOwner: companyOwner,
+      emailAddress: emailAddress,
+      phone: phone,
+      address: address,
+    );
+  }
+
+  Future<CloudCompany> getCompany({required String id}) async {
+    final docSnapshot = await _firebaseStorage.getDocument(
+      collectionPath: 'companies',
+      documentId: id,
+    );
+    if (!docSnapshot.exists) throw CouldNotFindCompanyException();
+    return CloudCompany.fromFirestore(docSnapshot);
+  }
+
+  Future<CloudCompany> updateCompany({
+    required String id,
+    required String companyName,
+    required String companyAddress,
+    required String companyEmail,
+    required String companyPhone,
+  }) async {
+    await _firebaseStorage.updateDocument(
+      collectionPath: 'companies',
+      documentId: id,
+      data: {
+        'companyName': companyName,
+        'companyAddress': companyAddress,
+        'companyEmail': companyEmail,
+        'companyPhone': companyPhone,
+      },
+    );
+    return await getCompany(id: id);
+  }
+
+  Future<void> deleteCompany({required String id}) async {
+    await _firebaseStorage.deleteDocument(
+      collectionPath: 'companies',
+      documentId: id,
+    );
+  }
+
+  Stream<Iterable<CloudCompany>> allCompanies({required String creatorId}) {
+    return companies
+        .where('creatorId', isEqualTo: creatorId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => CloudCompany.fromFirestore(doc));
+    });
+  }
+
+  Future<List<CloudCompany>> getCompaniesByCreatorId(
+      {required String creatorId}) async {
+    final querySnapshot =
+        await companies.where('creatorId', isEqualTo: creatorId).get();
+    return querySnapshot.docs
+        .map((doc) => CloudCompany.fromFirestore(doc))
         .toList();
   }
 }
