@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/reports/create_or_update_report_view.dart';
-import '../services/cloud_rent_service.dart';
+import '../employee_services/cloud_rent_service.dart';
 import 'generate_report.dart';
 
 class ReportViewPage extends StatelessWidget {
@@ -15,10 +15,23 @@ class ReportViewPage extends StatelessWidget {
     return await _rentService.getProfile(id: rent.profileId);
   }
 
+  Future<CloudCompany> _fetchCompanyName(String companyId) async {
+    return await _rentService.getCompany(
+        id: companyId); // Assuming you have a method to fetch company details
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('View Reports')),
+      appBar: AppBar(
+        title: const Text('View Reports'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
       body: StreamBuilder<Iterable<CloudReports>>(
         stream: _rentService.allReports(rentId: rentId),
         builder: (context, snapshot) {
@@ -41,18 +54,30 @@ class ReportViewPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            CreateOrUpdateReportView(rentId: rentId),
+                        builder: (context) => CreateOrUpdateReportView(
+                          rentId: rentId,
+                          companyId: report.companyId,
+                        ),
                       ),
                     );
                   },
                   trailing: IconButton(
-                    icon: Icon(Icons.download),
+                    icon: const Icon(Icons.download),
                     onPressed: () async {
-                      final rent = await _rentService.getRent(id: rentId);
-                      final profile =
-                          await _rentService.getProfile(id: rent.profileId);
-                      await generateAndPrintReport(rent, profile, report);
+                      try {
+                        final rent = await _rentService.getRent(id: rentId);
+                        final profile =
+                            await _rentService.getProfile(id: rent.profileId);
+                        final company =
+                            await _rentService.getCompany(id: rent.companyId);
+                        await generateAndPrintReport(
+                            rent, profile, report, company);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Failed to generate report: $e')),
+                        );
+                      }
                     },
                   ),
                 );
@@ -60,6 +85,21 @@ class ReportViewPage extends StatelessWidget {
             );
           }
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateOrUpdateReportView(
+                rentId: rentId,
+                companyId:
+                    '', // or get the companyId from another source if needed
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

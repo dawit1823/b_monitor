@@ -1,7 +1,7 @@
 // related_penalties.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
-import 'package:r_and_e_monitor/services/cloud/services/cloud_rent_service.dart';
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 
 class RelatedPenaltiesPage extends StatelessWidget {
   final String profileId;

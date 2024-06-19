@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import '../cloud_data_models.dart';
-import '../services/cloud_property_service.dart';
+import '../employee_services/cloud_property_service.dart';
 
 class ReadPropertyPage extends StatelessWidget {
   final String propertyId;

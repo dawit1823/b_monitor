@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../employee/employee_login_page.dart';
 
 class AddMemberPage extends StatefulWidget {
   const AddMemberPage({Key? key}) : super(key: key);
@@ -12,11 +14,12 @@ class _AddMemberPageState extends State<AddMemberPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String? _selectedRole;
-  List<String> _roles = ['Role 1', 'Role 2', 'Role 3']; // Initial roles
+  final List<String> _roles = ['accountant', 'secretary', 'manager'];
 
-  void _registerUser() async {
+  _registerUser() async {
     try {
       final String email = _emailController.text.trim();
       final String password = _passwordController.text.trim();
@@ -30,8 +33,14 @@ class _AddMemberPageState extends State<AddMemberPage> {
       // Send email verification
       await userCredential.user!.sendEmailVerification();
 
-      // Add user to the selected role
-      // Add your implementation here
+      // Add user to Firestore with the selected role
+      await _firestore
+          .collection('employees')
+          .doc(userCredential.user!.uid)
+          .set({
+        'email': email,
+        'role': _selectedRole,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -39,6 +48,13 @@ class _AddMemberPageState extends State<AddMemberPage> {
               Text('User registered successfully. Verification email sent.'),
         ),
       );
+
+      // Clear the input fields
+      _emailController.clear();
+      _passwordController.clear();
+      setState(() {
+        _selectedRole = null;
+      });
     } catch (e) {
       print('Error registering user: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,106 +103,34 @@ class _AddMemberPageState extends State<AddMemberPage> {
               decoration: InputDecoration(labelText: 'Temporary Password'),
             ),
             SizedBox(height: 10),
-            Row(
-              children: [
-                DropdownButton<String>(
-                  value: _selectedRole,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedRole = newValue;
-                    });
-                  },
-                  items: _roles.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-                IconButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Add Role'),
-                          content: TextField(
-                            onChanged: (newValue) {
-                              _selectedRole = newValue;
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Enter role name',
-                            ),
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                _addRole(_selectedRole!);
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Add'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Cancel'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: Icon(Icons.add),
-                ),
-                IconButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Remove Role'),
-                          content: DropdownButton<String>(
-                            value: _selectedRole,
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedRole = newValue;
-                              });
-                            },
-                            items: _roles
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () {
-                                _removeRole(_selectedRole!);
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Remove'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('Cancel'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: Icon(Icons.remove),
-                ),
-              ],
+            DropdownButton<String>(
+              value: _selectedRole,
+              hint: Text('Select Role'),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedRole = newValue;
+                });
+              },
+              items: _roles.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _registerUser,
+              onPressed: () async {
+                await _registerUser();
+                if (_selectedRole != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EmployeeLoginPage(),
+                    ),
+                  );
+                }
+              },
               child: Text('Register'),
             ),
           ],

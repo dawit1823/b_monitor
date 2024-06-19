@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import '../../auth/auth_service.dart';
-import '../services/cloud_rent_service.dart';
+import '../employee_services/cloud_rent_service.dart';
 
 class CreateOrUpdateExpense extends StatefulWidget {
   final CloudExpenses? expense;

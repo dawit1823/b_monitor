@@ -43,3 +43,7 @@ class CouldNotFindExpenseException implements Exception {}
 class CouldNotFindReportException implements Exception {}
 
 class CouldNotFindCompanyException implements Exception {}
+
+class CouldNotFindFinancialReportException implements Exception {}
+
+class CouldNotFindEmployeeException implements Exception {}

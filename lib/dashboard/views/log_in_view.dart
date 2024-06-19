@@ -1,8 +1,8 @@
+// log_in_view.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/dashboard/admin/dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
-import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
 import 'package:r_and_e_monitor/dashboard/views/forgot_password.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/Create%20user_checker.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/error_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_exceptions.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
@@ -53,10 +53,7 @@ class _LoginPageState extends State<LoginPage> {
       );
       final user = AuthService.firebase().currentUser;
       if (user?.isEmailVerified ?? false) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          adminDashboardRoute,
-          (route) => false,
-        );
+        await UserChecker.checkUser(context); // Use the UserChecker
       } else {
         Navigator.of(context).pushNamedAndRemoveUntil(
           emailVerifyRoute,
@@ -66,12 +63,12 @@ class _LoginPageState extends State<LoginPage> {
     } on UserNotFoundAuthException {
       await showErrorDialog(
         context,
-        "user not found",
+        "User not found",
       );
     } on WrongPasswordAuthException {
       await showErrorDialog(
         context,
-        "wrong-password",
+        "Wrong password",
       );
     } on GenericAuthException {
       await showErrorDialog(

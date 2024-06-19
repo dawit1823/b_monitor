@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-
-import '../services/cloud_rent_service.dart';
+import '../employee_services/cloud_rent_service.dart';
 
 class CreateOrUpdateReportView extends StatefulWidget {
   final String rentId;
+  final String companyId;
 
-  const CreateOrUpdateReportView({Key? key, required this.rentId})
+  const CreateOrUpdateReportView(
+      {Key? key, required this.rentId, required this.companyId})
       : super(key: key);
 
   @override
@@ -45,6 +46,7 @@ class _CreateOrUpdateReportViewState extends State<CreateOrUpdateReportView> {
       try {
         await _rentService.createReport(
           rentId: widget.rentId,
+          companyId: widget.companyId,
           reportTitle: _titleController.text,
           reportContent: _contentController.text,
           carbonCopy: _carbonCopyController.text,

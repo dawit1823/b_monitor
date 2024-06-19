@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:r_and_e_monitor/dashboard/admin/add_member.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/enums/menu_action.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
+import 'package:r_and_e_monitor/services/cloud/Employee/employee_list_view.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/rent_list.dart';
 import 'package:r_and_e_monitor/services/cloud/property/property_view.dart';
-import '../../services/cloud/company/list_company.dart';
-import '../../services/rent/rent_service_old/profile/profile_view.dart'; // Import the listCompany.dart file
+import 'package:r_and_e_monitor/services/cloud/company/list_company.dart';
+import 'package:r_and_e_monitor/services/cloud/financial_management/financial_management_list_view.dart';
+import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_view.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -49,7 +52,7 @@ class AdminDashboard extends StatelessWidget {
                 if (logoutConfirmed) {
                   await AuthService.firebase().signOut();
                   Navigator.pushReplacementNamed(
-                      context, hompageRoute); // Navigate to HomePage route
+                      context, homepageRoute); // Navigate to HomePage route
                 }
               }
             },
@@ -81,7 +84,7 @@ class AdminDashboard extends StatelessWidget {
               ),
             ),
             ListTile(
-              title: const Text('Add Profile'),
+              title: const Text('Profile View'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -111,12 +114,44 @@ class AdminDashboard extends StatelessWidget {
               },
             ),
             ListTile(
+              title: const Text('Employee List'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EmployeeListView()),
+                );
+              },
+            ),
+            ListTile(
               title: const Text('Companies'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ListCompany()),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Financial Management'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => FinancialManagementListView()),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Add Member'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddMemberPage()),
                 );
               },
             ),

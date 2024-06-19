@@ -1,3 +1,4 @@
+//cloud_rent_service.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -17,9 +18,212 @@ class RentService {
       FirebaseFirestore.instance.collection('reports');
   final CollectionReference companies =
       FirebaseFirestore.instance.collection('companies');
+  final CollectionReference financialManagement =
+      FirebaseFirestore.instance.collection('financialManagement');
+
+  final CollectionReference employees =
+      FirebaseFirestore.instance.collection('employees');
+
+  Future<CloudEmployee> createEmployee({
+    required String creatorId,
+    required String companyId,
+    required String role,
+    required String name,
+    required String email,
+    required String phoneNumber,
+    required String contractInfo,
+  }) async {
+    final docRef = await _firebaseStorage.addDocument(
+      collectionPath: 'employees',
+      data: {
+        'creatorId': creatorId,
+        'companyId': companyId,
+        'role': role,
+        'name': name,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'contractInfo': contractInfo,
+      },
+    );
+
+    return CloudEmployee(
+      id: docRef.id,
+      creatorId: creatorId,
+      companyId: companyId,
+      role: role,
+      name: name,
+      email: email,
+      phoneNumber: phoneNumber,
+      contractInfo: contractInfo,
+    );
+  }
+
+  Future<CloudEmployee> getEmployee({required String id}) async {
+    final docSnapshot = await _firebaseStorage.getDocument(
+      collectionPath: 'employees',
+      documentId: id,
+    );
+    if (!docSnapshot.exists) throw CouldNotFindEmployeeException();
+    return CloudEmployee.fromFirestore(docSnapshot);
+  }
+
+  Future<CloudEmployee> updateEmployee({
+    required String id,
+    required String role,
+    required String name,
+    required String email,
+    required String phoneNumber,
+    required String contractInfo,
+  }) async {
+    await _firebaseStorage.updateDocument(
+      collectionPath: 'employees',
+      documentId: id,
+      data: {
+        'role': role,
+        'name': name,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'contractInfo': contractInfo,
+      },
+    );
+
+    final updatedDoc = await _firebaseStorage.getDocument(
+      collectionPath: 'employees',
+      documentId: id,
+    );
+    return CloudEmployee.fromFirestore(updatedDoc);
+  }
+
+  Future<void> deleteEmployee({required String id}) async {
+    await _firebaseStorage.deleteDocument(
+      collectionPath: 'employees',
+      documentId: id,
+    );
+  }
+
+  Stream<Iterable<CloudEmployee>> allEmployees({required String creatorId}) {
+    return employees
+        .where('creatorId', isEqualTo: creatorId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => CloudEmployee.fromFirestore(doc));
+    });
+  }
+
+  Future<List<CloudEmployee>> getEmployeesByEmailAndRole({
+    required String email,
+    required String role,
+  }) async {
+    final querySnapshot = await employees
+        .where('email', isEqualTo: email)
+        .where('role', isEqualTo: role)
+        .get();
+    return querySnapshot.docs
+        .map((doc) => CloudEmployee.fromFirestore(doc))
+        .toList();
+  }
+
+  Future<List<CloudEmployee>> getEmployeesByCreatorId(
+      {required String creatorId}) async {
+    final querySnapshot =
+        await employees.where('creatorId', isEqualTo: creatorId).get();
+    return querySnapshot.docs
+        .map((doc) => CloudEmployee.fromFirestore(doc))
+        .toList();
+  }
+
+  Future<CloudFinancialManagement> createFinancialReport({
+    required String creatorId,
+    required String companyId,
+    required String txnType,
+    required String discription,
+    required String totalAmount,
+    required String txnDate,
+  }) async {
+    final docRef = await _firebaseStorage.addDocument(
+      collectionPath: 'financialManagement',
+      data: {
+        'creatorId': creatorId,
+        'companyId': companyId,
+        'transactionType': txnType,
+        'discription': discription,
+        'totalAmount': totalAmount,
+        'transactionDate': txnDate,
+      },
+    );
+
+    return CloudFinancialManagement(
+      id: docRef.id,
+      creatorId: creatorId,
+      companyId: companyId,
+      txnType: txnType,
+      discription: discription,
+      totalAmount: totalAmount,
+      txnDate: txnDate,
+    );
+  }
+
+  Future<CloudFinancialManagement> getFinancialReport(
+      {required String id}) async {
+    final docSnapshot = await _firebaseStorage.getDocument(
+      collectionPath: 'financialManagement',
+      documentId: id,
+    );
+    if (!docSnapshot.exists) throw CouldNotFindFinancialReportException();
+    return CloudFinancialManagement.fromFirestore(docSnapshot);
+  }
+
+  Future<CloudFinancialManagement> updateFinancialReport({
+    required String id,
+    required String txnType,
+    required String discription,
+    required String totalAmount,
+    required String txnDate,
+  }) async {
+    await _firebaseStorage.updateDocument(
+      collectionPath: 'financialManagement',
+      documentId: id,
+      data: {
+        'transactionType': txnType,
+        'discription': discription,
+        'totalAmount': totalAmount,
+        'transactionDate': txnDate,
+      },
+    );
+    return await getFinancialReport(id: id);
+  }
+
+  Future<void> deleteFinancialReport({required String id}) async {
+    await _firebaseStorage.deleteDocument(
+      collectionPath: 'financialManagement',
+      documentId: id,
+    );
+  }
+
+  Stream<Iterable<CloudFinancialManagement>> allFinancialReports(
+      {required String creatorId}) {
+    return financialManagement
+        .where('creatorId', isEqualTo: creatorId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CloudFinancialManagement.fromFirestore(doc));
+    });
+  }
+
+  Future<List<CloudFinancialManagement>> getFinancialReportsByCreatorId(
+      {required String creatorId}) async {
+    final querySnapshot = await financialManagement
+        .where('creatorId', isEqualTo: creatorId)
+        .get();
+    return querySnapshot.docs
+        .map((doc) => CloudFinancialManagement.fromFirestore(doc))
+        .toList();
+  }
 
   Future<CloudProfile> createProfile({
     required String creatorId,
+    required String companyId,
     required String companyName,
     required String firstName,
     required String lastName,
@@ -33,6 +237,7 @@ class RentService {
       collectionPath: 'profiles',
       data: {
         'creatorId': creatorId,
+        'companyId': companyId,
         'companyName': companyName,
         'firstName': firstName,
         'lastName': lastName,
@@ -47,6 +252,7 @@ class RentService {
     return CloudProfile(
       id: docRef.id,
       creatorId: creatorId,
+      companyId: companyId,
       companyName: companyName,
       firstName: firstName,
       lastName: lastName,
@@ -87,6 +293,7 @@ class RentService {
 
   Future<CloudProfile> updateProfile({
     required String id,
+    //required String companyId,
     required String companyName,
     required String firstName,
     required String lastName,
@@ -100,6 +307,7 @@ class RentService {
       collectionPath: 'profiles',
       documentId: id,
       data: {
+        //'companyId': companyId,
         'companyName': companyName,
         'firstName': firstName,
         'lastName': lastName,
@@ -110,7 +318,12 @@ class RentService {
         'contractInfo': contractInfo,
       },
     );
-    return await getProfile(id: id);
+
+    final updatedDoc = await _firebaseStorage.getDocument(
+      collectionPath: 'profiles',
+      documentId: id,
+    );
+    return CloudProfile.fromFirestore(updatedDoc);
   }
 
   Future<void> deleteProfile({required String id}) async {
@@ -122,6 +335,7 @@ class RentService {
 
   Future<CloudRent> createRent({
     required String creatorId,
+    required String companyId,
     required String profileId,
     required String propertyId,
     required double rentAmount,
@@ -134,6 +348,7 @@ class RentService {
       collectionPath: 'rents',
       data: {
         'creatorId': creatorId,
+        'companyId': companyId,
         'profileId': profileId,
         'propertyId': propertyId,
         'rentAmount': rentAmount,
@@ -146,6 +361,7 @@ class RentService {
 
     return CloudRent(
       id: docRef.id,
+      companyId: companyId,
       creatorId: creatorId,
       profileId: profileId,
       propertyId: propertyId,
@@ -155,6 +371,15 @@ class RentService {
       endContract: endContract,
       paymentStatus: paymentStatus,
     );
+  }
+
+  Future<List<CloudRent>> getRentsByCompanyId(
+      {required String companyId}) async {
+    final querySnapshot =
+        await rents.where('companyId', isEqualTo: companyId).get();
+    return querySnapshot.docs
+        .map((doc) => CloudRent.fromFirestore(doc))
+        .toList();
   }
 
   Future<CloudRent> getRent({required String id}) async {
@@ -216,6 +441,7 @@ class RentService {
 
   Future<CloudExpenses> createExpense({
     required String creatorId,
+    //required String companyId,
     required String propertyId,
     required String rentId,
     required String profileId,
@@ -228,6 +454,7 @@ class RentService {
       collectionPath: 'expenses',
       data: {
         'creatorId': creatorId,
+        //'companyId': companyId,
         'propertyId': propertyId,
         'rentId': rentId,
         'profileId': profileId,
@@ -248,6 +475,7 @@ class RentService {
       amount: amount,
       discription: discription,
       date: date,
+      //companyId: companyId,
     );
   }
 
@@ -319,6 +547,7 @@ class RentService {
 
   Future<CloudReports> createReport({
     required String rentId,
+    required String companyId,
     required String reportTitle,
     required String reportContent,
     required String carbonCopy,
@@ -328,6 +557,7 @@ class RentService {
       collectionPath: 'reports',
       data: {
         'rentId': rentId,
+        'companyId': companyId,
         'report_title': reportTitle,
         'report_content': reportContent,
         'carbonCopy': carbonCopy,
@@ -337,6 +567,7 @@ class RentService {
 
     return CloudReports(
       reportId: docRef.id,
+      companyId: companyId,
       rentId: rentId,
       reportTitle: reportTitle,
       reportContent: reportContent,
@@ -474,5 +705,14 @@ class RentService {
     return querySnapshot.docs
         .map((doc) => CloudCompany.fromFirestore(doc))
         .toList();
+  }
+
+  Future<CloudCompany> getCompanyById({required String companyId}) async {
+    final docSnapshot = await _firebaseStorage.getDocument(
+      collectionPath: 'companies',
+      documentId: companyId,
+    );
+    if (!docSnapshot.exists) throw CouldNotFindCompanyException();
+    return CloudCompany.fromFirestore(docSnapshot);
   }
 }

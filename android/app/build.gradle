@@ -24,8 +24,13 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.benaber.r_and_e_monitor"
+    
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
+
+    defaultConfig {                                                                            
+     minSdkVersion 19                                                                         
+   } 
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

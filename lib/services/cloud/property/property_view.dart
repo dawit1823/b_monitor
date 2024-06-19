@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
-import 'package:r_and_e_monitor/services/cloud/services/cloud_property_service.dart';
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/property/properties_list_view.dart';
 
+import '../../../dashboard/views/constants/routes.dart';
 import '../../auth/auth_service.dart';
+import '../../property_mangement/new/new_property.dart';
 import '../rents/read_property_page.dart';
 
 class PropertyView extends StatefulWidget {
@@ -43,10 +44,10 @@ class _PropertyViewState extends State<PropertyView> {
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
+              return const Center(child: CircularProgressIndicator());
             case ConnectionState.active:
               if (snapshot.hasData) {
-                final allProperties =
-                    snapshot.data as Iterable<DatabaseProperty>;
+                final allProperties = snapshot.data!;
                 return PropertyListView(
                   properties: allProperties,
                   onDeleteProperty: (property) async {
@@ -61,17 +62,19 @@ class _PropertyViewState extends State<PropertyView> {
                     );
                   },
                   onLongPress: (property) {
-                    Navigator.of(context).pushNamed(
-                      newPropertyRoute,
-                      arguments: property,
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NewPropertyView(property: property),
+                      ),
                     );
                   },
                 );
               } else {
-                return const CircularProgressIndicator();
+                return const Center(child: Text('No properties found'));
               }
             default:
-              return const CircularProgressIndicator();
+              return const Center(child: Text('Error loading properties'));
           }
         },
       ),

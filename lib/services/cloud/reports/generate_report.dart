@@ -7,6 +7,7 @@ Future<void> generateAndPrintReport(
   CloudRent rent,
   CloudProfile profile,
   CloudReports report,
+  CloudCompany company, // Add companyName parameter
 ) async {
   final pdf = pw.Document();
 
@@ -23,8 +24,9 @@ Future<void> generateAndPrintReport(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(
-                    'NBR Building\nN.B.R.BUILDING',
+                    company.companyName, // Use the passed companyName
                     style: pw.TextStyle(
+                      fontBold: pw.Font.timesBold(),
                       fontSize: 20,
                       fontWeight: pw.FontWeight.bold,
                     ),

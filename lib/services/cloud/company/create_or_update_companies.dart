@@ -1,7 +1,8 @@
+//create_or_update_companies.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import '../../auth/auth_service.dart';
-import '../services/cloud_rent_service.dart';
+import '../employee_services/cloud_rent_service.dart';
 
 class CreateOrUpdateCompany extends StatefulWidget {
   final CloudCompany? company;
@@ -9,7 +10,7 @@ class CreateOrUpdateCompany extends StatefulWidget {
   const CreateOrUpdateCompany({Key? key, this.company}) : super(key: key);
 
   @override
-  _CreateOrUpdateCompanyState createState() => _CreateOrUpdateCompanyState();
+  State<CreateOrUpdateCompany> createState() => _CreateOrUpdateCompanyState();
 }
 
 class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_expense.dart';
-import '../services/cloud_rent_service.dart';
+import '../employee_services/cloud_rent_service.dart';
 
 class ExpenseView extends StatelessWidget {
   final String rentId;

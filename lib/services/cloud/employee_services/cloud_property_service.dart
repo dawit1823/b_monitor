@@ -7,6 +7,7 @@ class PropertyService {
 
   Future<DatabaseProperty> createProperty({
     required String creator,
+    required String companyId,
     required String propertyType,
     required String floorNumber,
     required String propertyNumber,
@@ -17,6 +18,7 @@ class PropertyService {
   }) async {
     final docRef = await properties.add({
       'creatorId': creator,
+      'companyId': companyId,
       'propertyType': propertyType,
       'floorNumber': floorNumber,
       'propertyNumber': propertyNumber,
@@ -28,6 +30,7 @@ class PropertyService {
 
     return DatabaseProperty(
       id: docRef.id,
+      companyId: companyId,
       creatorId: creator,
       propertyType: propertyType,
       floorNumber: floorNumber,
@@ -56,10 +59,10 @@ class PropertyService {
   Future<DatabaseProperty> updateProperty({
     required String id,
     required String propertyType,
-    required int floorNumber,
+    required String floorNumber,
     required String propertyNumber,
-    required double sizeInSquareMeters,
-    required double pricePerMonth,
+    required String sizeInSquareMeters,
+    required String pricePerMonth,
     required String description,
     required bool isRented,
   }) async {

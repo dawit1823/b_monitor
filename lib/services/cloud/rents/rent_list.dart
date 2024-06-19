@@ -1,13 +1,14 @@
-//rent_list.dart
+// rent_list.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
-import 'package:r_and_e_monitor/services/cloud/services/cloud_property_service.dart';
-import 'package:r_and_e_monitor/services/cloud/services/cloud_rent_service.dart';
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_rents.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/error_dialogs.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/error_dialog.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/read_rent_page.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/reports/generate_rent_report.dart';
 
 class RentList extends StatefulWidget {
   const RentList({Key? key}) : super(key: key);
@@ -48,6 +49,11 @@ class _RentListState extends State<RentList> {
     }
   }
 
+  Future<String> _fetchCompanyName(String companyId) async {
+    final company = await _rentService.getCompanyById(companyId: companyId);
+    return company.companyName;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,20 +87,71 @@ class _RentListState extends State<RentList> {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasData) {
                   final allRents = snapshot.data as Iterable<CloudRent>;
-                  final contractEndedRents = allRents
-                      .where((rent) => rent.endContract == 'Contract_Ended');
-                  final contractActiveRents = allRents
-                      .where((rent) => rent.endContract == 'Contract_Active');
-                  final contractProlongedRents = allRents.where(
-                      (rent) => rent.endContract == 'Contract_Prolonged');
 
-                  return ListView(
-                    children: [
-                      _buildRentSection('Contract Ended', contractEndedRents),
-                      _buildRentSection('Contract Active', contractActiveRents),
-                      _buildRentSection(
-                          'Contract Prolonged', contractProlongedRents),
-                    ],
+                  final rentsByCompany =
+                      <String, Map<String, List<CloudRent>>>{};
+
+                  for (var rent in allRents) {
+                    if (!rentsByCompany.containsKey(rent.companyId)) {
+                      rentsByCompany[rent.companyId] = {
+                        'Contract_Ended': [],
+                        'Contract_Active': [],
+                        'Contract_Prolonged': [],
+                      };
+                    }
+                    rentsByCompany[rent.companyId]![rent.endContract]!
+                        .add(rent);
+                  }
+
+                  return FutureBuilder<Map<String, String>>(
+                    future: _fetchCompanyNames(rentsByCompany.keys.toList()),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                              'Error fetching company names: ${snapshot.error}'),
+                        );
+                      } else if (snapshot.hasData) {
+                        final companyNames = snapshot.data!;
+                        return ListView(
+                          children: rentsByCompany.entries.map((entry) {
+                            final companyId = entry.key;
+                            final companyName =
+                                companyNames[companyId] ?? 'Unknown Company';
+                            final groupedRents = entry.value;
+                            return ExpansionTile(
+                              title: Text(companyName),
+                              children: [
+                                _buildRentSection('Contract Ended',
+                                    groupedRents['Contract_Ended']!),
+                                _buildRentSection('Contract Active',
+                                    groupedRents['Contract_Active']!),
+                                _buildRentSection('Contract Prolonged',
+                                    groupedRents['Contract_Prolonged']!),
+                                ListTile(
+                                  title: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              GenerateRentReport(
+                                                  companyId: companyId),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('View Rent Report'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        );
+                      } else {
+                        return const Center(child: Text('No rents available.'));
+                      }
+                    },
                   );
                 } else {
                   return const Center(child: Text('No rents available.'));
@@ -104,13 +161,33 @@ class _RentListState extends State<RentList> {
     );
   }
 
-  Widget _buildRentSection(String title, Iterable<CloudRent> rents) {
+  Future<Map<String, String>> _fetchCompanyNames(
+      List<String> companyIds) async {
+    final Map<String, String> companyNames = {};
+    for (var companyId in companyIds) {
+      final companyName = await _fetchCompanyName(companyId);
+      companyNames[companyId] = companyName;
+    }
+    return companyNames;
+  }
+
+  Widget _buildRentSection(String title, List<CloudRent> rents) {
     return ExpansionTile(
-      title: Text(title),
+      title: Text('$title (${rents.length})'),
       children: rents.map((rent) {
+        final property =
+            _properties.firstWhere((prop) => prop.id == rent.propertyId);
+        final profile =
+            _profiles.firstWhere((prop) => prop.id == rent.profileId);
         return ListTile(
-          title: Text(rent.contract),
-          subtitle: Text('Due: ${rent.dueDate}'),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Profile Name: ${profile.companyName}'),
+              Text('Property Number: ${property.propertyNumber}'),
+            ],
+          ),
+          subtitle: Text(' ${rent.contract}  '),
           onTap: () {
             Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => ReadRentPage(rentId: rent.id),

@@ -1,11 +1,11 @@
-// profile_view.dart
 import 'package:flutter/material.dart';
+import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/create_or_update_profile.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_list_view.dart';
 import '../../../../dashboard/views/constants/routes.dart';
 import '../../../auth/auth_service.dart';
 import '../../../cloud/cloud_data_models.dart';
 import '../../../cloud/profiles/read_profile.dart';
-import '../../../cloud/services/cloud_rent_service.dart';
+import '../../../cloud/employee_services/cloud_rent_service.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({Key? key}) : super(key: key);
@@ -58,9 +58,11 @@ class _ProfileViewState extends State<ProfileView> {
                     );
                   },
                   onLongPress: (profile) {
-                    Navigator.of(context).pushNamed(
-                      createOrUpdateProfileRoute,
-                      arguments: profile,
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            CreateOrUpdateProfile(profile: profile),
+                      ),
                     );
                   },
                 );
