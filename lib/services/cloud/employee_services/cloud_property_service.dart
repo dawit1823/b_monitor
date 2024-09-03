@@ -5,7 +5,7 @@ class PropertyService {
   final CollectionReference properties =
       FirebaseFirestore.instance.collection('properties');
 
-  Future<DatabaseProperty> createProperty({
+  Future<CloudProperty> createProperty({
     required String creator,
     required String companyId,
     required String propertyType,
@@ -28,7 +28,7 @@ class PropertyService {
       'isRented': isRented,
     });
 
-    return DatabaseProperty(
+    return CloudProperty(
       id: docRef.id,
       companyId: companyId,
       creatorId: creator,
@@ -42,21 +42,20 @@ class PropertyService {
     );
   }
 
-  Stream<Iterable<DatabaseProperty>> allProperties(
-          {required String creatorId}) =>
+  Stream<Iterable<CloudProperty>> allProperties({required String creatorId}) =>
       properties.snapshots().map((event) => event.docs
-          .map((doc) => DatabaseProperty.fromSnapshot(doc))
+          .map((doc) => CloudProperty.fromSnapshot(doc))
           .where((property) => property.creatorId == creatorId));
 
-  Future<DatabaseProperty> getProperty({required String id}) async {
+  Future<CloudProperty> getProperty({required String id}) async {
     final doc = await properties.doc(id).get();
     if (!doc.exists) {
       throw Exception('Property not found');
     }
-    return DatabaseProperty.fromSnapshot(doc);
+    return CloudProperty.fromSnapshot(doc);
   }
 
-  Future<DatabaseProperty> updateProperty({
+  Future<CloudProperty> updateProperty({
     required String id,
     required String propertyType,
     required String floorNumber,

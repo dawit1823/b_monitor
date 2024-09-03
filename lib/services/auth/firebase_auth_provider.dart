@@ -4,16 +4,19 @@ import 'package:firebase_auth/firebase_auth.dart'
 import 'package:firebase_core/firebase_core.dart';
 import 'package:r_and_e_monitor/firebase_options.dart';
 import 'package:r_and_e_monitor/services/auth/auth_exceptions.dart';
-
 import 'package:r_and_e_monitor/services/auth/auth_provider.dart';
 import 'package:r_and_e_monitor/services/auth/auth_user.dart';
 
 class FirebaseAuthProvider implements AuthProvider {
   @override
-  Future<void> initialze() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  Future<void> initialize() async {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      throw FirebaseInitializationException();
+    }
   }
 
   @override
@@ -26,10 +29,8 @@ class FirebaseAuthProvider implements AuthProvider {
   Future<AuthUser> logIn(
       {required String email, required String password}) async {
     try {
-      FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
       final user = currentUser;
       if (user != null) {
         return user;
@@ -37,13 +38,7 @@ class FirebaseAuthProvider implements AuthProvider {
         throw UserNotLoggedInAuthException();
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == "user-not-found") {
-        throw UserNotFoundAuthException();
-      } else if (e.code == "wrong-password") {
-        throw WrongPasswordAuthException();
-      } else {
-        throw GenericAuthException();
-      }
+      throw _handleFirebaseAuthException(e);
     } catch (_) {
       throw GenericAuthException();
     }
@@ -70,15 +65,11 @@ class FirebaseAuthProvider implements AuthProvider {
   }
 
   @override
-  Future<AuthUser> createUser({
-    required String email,
-    required String password,
-  }) async {
+  Future<AuthUser> createUser(
+      {required String email, required String password}) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
       final user = currentUser;
       if (user != null) {
         return user;
@@ -86,35 +77,35 @@ class FirebaseAuthProvider implements AuthProvider {
         throw UserNotFoundAuthException();
       }
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        throw WeakPasswordAuthException();
-      } else if (e.code == 'email-already-in-use') {
-        throw EmailAlreadyInUseAuthException();
-      } else if (e.code == 'invalid-email') {
-        throw InvalidEmailAuthException();
-      } else {
-        throw GenericAuthException();
-      }
+      throw _handleFirebaseAuthException(e);
     } catch (_) {
       throw GenericAuthException();
     }
   }
 
-  String _getErrorMessage(String code) {
-    switch (code) {
+  Exception _handleFirebaseAuthException(FirebaseAuthException e) {
+    switch (e.code) {
       case 'invalid-email':
-        return 'Invalid email address';
+        return InvalidEmailAuthException();
       case 'user-not-found':
+        return UserNotFoundAuthException();
       case 'wrong-password':
-        return 'Invalid email or password';
+        return WrongPasswordAuthException();
       case 'network-request-failed':
-        return 'Network request failed';
+        return NetworkRequestFailedAuthException();
       case 'weak-password':
-        return 'The password provided is too weak.';
+        return WeakPasswordAuthException();
       case 'email-already-in-use':
-        return 'The account already exists for that email.';
+        return EmailAlreadyInUseAuthException();
       default:
-        return 'An error occurred';
+        return GenericAuthException();
     }
   }
+}
+
+class FirebaseInitializationException implements Exception {
+  final String message;
+  FirebaseInitializationException([this.message = '']);
+  @override
+  String toString() => 'FirebaseInitializationException: $message';
 }

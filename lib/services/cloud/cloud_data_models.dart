@@ -142,7 +142,7 @@ class CloudRent {
         paymentStatus = doc['paymentStatus'];
 }
 
-class DatabaseProperty {
+class CloudProperty {
   final String id;
   final String companyId;
   final String creatorId;
@@ -152,9 +152,9 @@ class DatabaseProperty {
   final String sizeInSquareMeters;
   final String pricePerMonth;
   final String description;
-  final bool isRented;
+  bool isRented;
 
-  const DatabaseProperty({
+  CloudProperty({
     required this.id,
     required this.companyId,
     required this.creatorId,
@@ -164,10 +164,10 @@ class DatabaseProperty {
     required this.sizeInSquareMeters,
     required this.pricePerMonth,
     required this.description,
-    required this.isRented,
+    this.isRented = false,
   });
 
-  DatabaseProperty.fromSnapshot(DocumentSnapshot snapshot)
+  CloudProperty.fromSnapshot(DocumentSnapshot snapshot)
       : id = snapshot.id,
         companyId = snapshot['companyId'],
         creatorId = snapshot['creatorId'],

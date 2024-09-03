@@ -6,8 +6,7 @@ class CreateOrUpdateReportView extends StatefulWidget {
   final String companyId;
 
   const CreateOrUpdateReportView(
-      {Key? key, required this.rentId, required this.companyId})
-      : super(key: key);
+      {super.key, required this.rentId, required this.companyId});
 
   @override
   State<CreateOrUpdateReportView> createState() =>
@@ -52,11 +51,15 @@ class _CreateOrUpdateReportViewState extends State<CreateOrUpdateReportView> {
           carbonCopy: _carbonCopyController.text,
           reportDate: _dateController.text,
         );
-        Navigator.pop(context);
+        if (mounted) {
+          Navigator.pop(context);
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save report: $e')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save report: $e')),
+          );
+        }
       }
     }
   }
@@ -94,7 +97,7 @@ class _CreateOrUpdateReportViewState extends State<CreateOrUpdateReportView> {
                 validator: (value) =>
                     value!.isEmpty ? 'Date cannot be empty' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: _saveReport,
                 child: const Text('Save Report'),

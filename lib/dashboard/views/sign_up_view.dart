@@ -1,12 +1,15 @@
-//sign_up_view.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
-import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/error_dialog.dart';
+import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_exceptions.dart';
-import 'package:r_and_e_monitor/services/auth/auth_service.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_bloc.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_event.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_state.dart';
 
 class AdminSignUpView extends StatefulWidget {
-  const AdminSignUpView({Key? key}) : super(key: key);
+  const AdminSignUpView({super.key});
 
   @override
   State<AdminSignUpView> createState() => _AdminSignUpViewState();
@@ -38,39 +41,10 @@ class _AdminSignUpViewState extends State<AdminSignUpView> {
     super.dispose();
   }
 
-  Future<void> _signUp(BuildContext context) async {
+  void _signUp() {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
-
-    try {
-      await AuthService.firebase().createUser(
-        email: email,
-        password: password,
-      );
-      AuthService.firebase().currentUser;
-      await AuthService.firebase().sendEmailVerification();
-      Navigator.of(context).pushNamed(emailVerifyRoute);
-    } on WeakPasswordAuthException {
-      await showErrorDialog(
-        context,
-        'weak-password',
-      );
-    } on EmailAlreadyInUseAuthException {
-      await showErrorDialog(
-        context,
-        'email already in use',
-      );
-    } on InvalidEmailAuthException {
-      await showErrorDialog(
-        context,
-        'invalid Email',
-      );
-    } on GenericAuthException {
-      await showErrorDialog(
-        context,
-        'Faild To Register!',
-      );
-    }
+    context.read<AuthBloc>().add(AuthEventRegister(email, password));
   }
 
   @override
@@ -81,38 +55,70 @@ class _AdminSignUpViewState extends State<AdminSignUpView> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: const OutlineInputBorder(),
-                errorText:
-                    _emailController.text.isEmpty ? 'Email is required' : null,
+        child: BlocListener<AuthBloc, AuthState>(
+          listener: (context, state) async {
+            if (state is AuthStateRegistering) {
+              if (state.exception is WeakPasswordAuthException) {
+                await showErrorDialog(context, 'Weak password');
+              } else if (state.exception is EmailAlreadyInUseAuthException) {
+                await showErrorDialog(context, 'Email already in use');
+              } else if (state.exception is InvalidEmailAuthException) {
+                await showErrorDialog(context, 'Invalid email');
+              } else if (state.exception is GenericAuthException) {
+                await showErrorDialog(context, 'Failed to register');
+              }
+            } else if (state is AuthStateNeedsVerification) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const VerifyEmailView()),
+              );
+            } else if (state is AuthStateLoggedOut) {
+              Navigator.pushNamed(context, loginRoute);
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: const OutlineInputBorder(),
+                  errorText: _emailController.text.isEmpty
+                      ? 'Email is required'
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 16.0),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              autocorrect: false,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: const OutlineInputBorder(),
-                errorText: _passwordController.text.isEmpty
-                    ? 'Password is required'
-                    : null,
+              const SizedBox(height: 16.0),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                autocorrect: false,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: const OutlineInputBorder(),
+                  errorText: _passwordController.text.isEmpty
+                      ? 'Password is required'
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _isButtonEnabled ? () => _signUp(context) : null,
-              child: const Text('Sign Up'),
-            ),
-          ],
+              const SizedBox(height: 16.0),
+              ElevatedButton(
+                onPressed: _isButtonEnabled ? _signUp : null,
+                child: const Text('Sign Up'),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.read<AuthBloc>().add(
+                        const AuthEventLogOut(),
+                      );
+                },
+                child: const Text("You Are registered first? Login here!"),
+              ),
+            ],
+          ),
         ),
       ),
     );

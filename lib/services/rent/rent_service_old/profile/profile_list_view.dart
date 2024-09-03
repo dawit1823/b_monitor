@@ -1,44 +1,52 @@
 // profile_list_view.dart
 import 'package:flutter/material.dart';
-
 import '../../../cloud/cloud_data_models.dart';
 
 typedef ProfileCallback = void Function(CloudProfile profile);
 
 class ProfilesListView extends StatelessWidget {
-  final Iterable<CloudProfile> profiles;
+  final Map<String, List<CloudProfile>> groupedProfiles;
+  final Map<String, String> companyNames;
   final ProfileCallback onDeleteProfile;
   final ProfileCallback onTap;
   final ProfileCallback onLongPress;
 
   const ProfilesListView({
-    Key? key,
-    required this.profiles,
+    super.key,
+    required this.groupedProfiles,
+    required this.companyNames,
     required this.onDeleteProfile,
     required this.onTap,
     required this.onLongPress,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: profiles.length,
+      itemCount: groupedProfiles.length,
       itemBuilder: (context, index) {
-        final profile = profiles.elementAt(index);
-        return ListTile(
-          title: Text(profile.companyName),
-          subtitle: Text('${profile.firstName} ${profile.lastName}'),
-          onTap: () => onTap(profile),
-          onLongPress: () => onLongPress(profile),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              final shouldDelete = await showDeleteDialog(context);
-              if (shouldDelete) {
-                onDeleteProfile(profile);
-              }
-            },
-          ),
+        final companyId = groupedProfiles.keys.elementAt(index);
+        final profiles = groupedProfiles[companyId]!;
+        final companyName = companyNames[companyId] ?? 'Unknown';
+
+        return ExpansionTile(
+          title: Text('Company: $companyName'),
+          children: profiles.map((profile) {
+            return ListTile(
+              title: Text('${profile.firstName} ${profile.lastName}'),
+              onTap: () => onTap(profile),
+              onLongPress: () => onLongPress(profile),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  final shouldDelete = await showDeleteDialog(context);
+                  if (shouldDelete) {
+                    onDeleteProfile(profile);
+                  }
+                },
+              ),
+            );
+          }).toList(),
         );
       },
     );

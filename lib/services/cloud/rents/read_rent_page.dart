@@ -1,13 +1,11 @@
 //read_rent_page.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+import 'package:r_and_e_monitor/services/cloud/profiles/read_profile.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/additional_costs.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/company_detail.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_rents.dart';
-import 'package:r_and_e_monitor/services/cloud/rents/prolong_rent.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/read_property_page.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_profile_page.dart';
-import '../company/read_company.dart';
-import '../reports/create_or_update_report_view.dart';
 import '../reports/report_view_page.dart';
 import '../employee_services/cloud_property_service.dart';
 import '../employee_services/cloud_rent_service.dart';
@@ -17,12 +15,16 @@ class ReadRentPage extends StatelessWidget {
   final RentService _rentService = RentService();
   final PropertyService _propertyService = PropertyService();
 
-  ReadRentPage({Key? key, required this.rentId}) : super(key: key);
+  ReadRentPage({super.key, required this.rentId});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('View Rent')),
+      appBar: AppBar(
+        title: const Text('View Rent'),
+        backgroundColor: const Color.fromARGB(255, 75, 153, 255),
+        elevation: 0,
+      ),
       body: FutureBuilder<CloudRent>(
         future: _rentService.getRent(id: rentId),
         builder: (context, rentSnapshot) {
@@ -46,7 +48,7 @@ class ReadRentPage extends StatelessWidget {
                   return const Center(child: Text('No profile data found'));
                 } else {
                   final profile = profileSnapshot.data!;
-                  return FutureBuilder<DatabaseProperty>(
+                  return FutureBuilder<CloudProperty>(
                     future: _propertyService.getProperty(id: rent.propertyId),
                     builder: (context, propertySnapshot) {
                       if (propertySnapshot.connectionState ==
@@ -82,89 +84,15 @@ class ReadRentPage extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildProfileText(context, profile),
-                                    _buildPropertyText(context, property),
-                                    _buildCompanyText(context, company),
-                                    _buildRentDetails(rent),
+                                    _buildProfileCard(context, profile),
+                                    const SizedBox(height: 10),
+                                    _buildPropertyCard(context, property),
+                                    const SizedBox(height: 10),
+                                    _buildCompanyCard(context, company),
                                     const SizedBox(height: 20),
-                                    _buildActionButton(context, 'Edit Rent',
-                                        () async {
-                                      final profiles = await _rentService
-                                          .allProfiles(
-                                              creatorId: rent.creatorId)
-                                          .first;
-                                      final properties = await _propertyService
-                                          .allProperties(
-                                              creatorId: rent.creatorId)
-                                          .first;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              CreateOrUpdateRentView(
-                                            rent: rent,
-                                            profiles: profiles.toList(),
-                                            properties: properties.toList(),
-                                          ),
-                                        ),
-                                      ).then((updatedRent) {
-                                        if (updatedRent != null) {
-                                          _loadUpdatedRent(context, rentId);
-                                        }
-                                      });
-                                    }),
+                                    _buildRentDetailsCard(context, rent),
                                     const SizedBox(height: 20),
-                                    _buildActionButton(
-                                        context, 'Additional Costs', () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AdditionalCostsPage(
-                                                  rentId: rentId),
-                                        ),
-                                      );
-                                    }),
-                                    const SizedBox(height: 20),
-                                    _buildActionButton(context, 'Prolong Rent',
-                                        () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProlongRentFormWidget(
-                                                  rentId: rentId),
-                                        ),
-                                      );
-                                    }),
-                                    const SizedBox(height: 20),
-                                    _buildActionButton(context, 'End Contract',
-                                        () => _endContract(context, rent)),
-                                    const SizedBox(height: 20),
-                                    _buildActionButton(
-                                        context, 'Create or Update Report', () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              CreateOrUpdateReportView(
-                                            rentId: rentId,
-                                            companyId: profile.companyId,
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                    const SizedBox(height: 20),
-                                    _buildActionButton(context, 'View Reports',
-                                        () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ReportViewPage(rentId: rentId),
-                                        ),
-                                      );
-                                    }),
+                                    _buildDropdownMenu(context, rent, profile),
                                   ],
                                 ),
                               );
@@ -183,111 +111,316 @@ class ReadRentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileText(BuildContext context, CloudProfile profile) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReadProfilePage(profileId: profile.id),
-          ),
-        );
-      },
-      child: Text(
-        'Profile: ${profile.companyName} - ${profile.firstName} ${profile.lastName}',
-        style: const TextStyle(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
+  Widget _buildProfileCard(BuildContext context, CloudProfile profile) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: const Icon(Icons.account_circle,
+            color: Color.fromARGB(255, 75, 153, 255)),
+        title: Text(
+          '${profile.firstName} ${profile.lastName}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text('Company: ${profile.companyName}'),
+        trailing: const Icon(Icons.arrow_forward_ios,
+            color: Color.fromARGB(255, 75, 153, 255)),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ReadProfile(profile: profile),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPropertyCard(BuildContext context, CloudProperty property) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading:
+            const Icon(Icons.home, color: Color.fromARGB(255, 75, 153, 255)),
+        title: Text(
+          'Property: ${property.propertyType}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text('Floor: ${property.floorNumber}'),
+        trailing: const Icon(Icons.arrow_forward_ios,
+            color: Color.fromARGB(255, 75, 153, 255)),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ReadPropertyPage(propertyId: property.id),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCompanyCard(BuildContext context, CloudCompany company) {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: const Icon(Icons.business,
+            color: Color.fromARGB(255, 75, 153, 255)),
+        title: Text(
+          company.companyName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text('Owner: ${company.companyOwner}'),
+        trailing: const Icon(Icons.arrow_forward_ios,
+            color: Color.fromARGB(255, 75, 153, 255)),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CompanyDetailPage(company: company),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRentDetailsCard(BuildContext context, CloudRent rent) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Rent Details',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const Divider(),
+            _buildDetailRow('Contract', rent.contract),
+            _buildDetailRow('Rent Amount', '\$${rent.rentAmount}'),
+            _buildDetailRow('Due Date', rent.dueDate),
+            _buildDetailRow('Rent Status', rent.endContract),
+            GestureDetector(
+              onTap: () =>
+                  _showPaymentStatusDialog(context, rent.paymentStatus),
+              child: _buildDetailRow('Payment Status', rent.paymentStatus),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildPropertyText(BuildContext context, DatabaseProperty property) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReadPropertyPage(propertyId: property.id),
+  Widget _buildDetailRow(String label, String value) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-        );
-      },
-      child: Text(
-        'Property: ${property.propertyType}, Floor: ${property.floorNumber}',
-        style: const TextStyle(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
-        ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCompanyText(BuildContext context, CloudCompany company) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ReadCompanyPage(companyId: company.id),
+  void _showPaymentStatusDialog(BuildContext context, String paymentStatus) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // Close the dialog when tapped outside
+          },
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            child: GestureDetector(
+              onTap: () {}, // Prevent dialog from closing when tapped inside
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Payment Status',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Color.fromARGB(255, 75, 153, 255),
+                        ),
+                      ),
+                      const Divider(),
+                      _buildPaymentStatusTable(paymentStatus),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 75, 153, 255),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         );
       },
-      child: Text(
-        'Company: ${company.companyName}, Owner: ${company.companyOwner}',
-        style: const TextStyle(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
-        ),
-      ),
     );
   }
 
-  Widget _buildRentDetails(CloudRent rent) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Contract: ${rent.contract}'),
-        Text('Rent Amount: ${rent.rentAmount}'),
-        Text('Due Date: ${rent.dueDate}'),
-        Text('Rent Status: ${rent.endContract}'),
-        Text('Payment Status: ${rent.paymentStatus}'),
+  Widget _buildPaymentStatusTable(String paymentStatus) {
+    // Assuming paymentStatus is a semicolon-separated string of rows
+    final rows = paymentStatus.split('; ');
+    final headers = [
+      'Payment Count',
+      'Advance Payment',
+      'Payment Type',
+      'Payment Date',
+      'Deposited On',
+      'Payment Amount',
+    ];
+
+    return DataTable(
+      border: TableBorder.all(color: const Color.fromARGB(255, 75, 153, 255)),
+      columns: headers
+          .map((header) => DataColumn(
+                label: Text(
+                  header,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 75, 153, 255),
+                  ),
+                ),
+              ))
+          .toList(),
+      rows: rows.map((row) {
+        final cells = row.split(', ');
+        return DataRow(
+          cells: cells.map((cell) => DataCell(Text(cell))).toList(),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDropdownMenu(
+      BuildContext context, CloudRent rent, CloudProfile profile) {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+        filled: true,
+        fillColor: Colors.grey[200],
+      ),
+      isExpanded: true,
+      hint: const Text("Select Action"),
+      items: const [
+        DropdownMenuItem(value: 'Edit', child: Text('Edit Rent')),
+        DropdownMenuItem(value: 'Delete', child: Text('Delete Rent')),
+        DropdownMenuItem(
+            value: 'AdditionalCosts', child: Text('Add Additional Costs')),
+        DropdownMenuItem(
+            value: 'CreateOrUpdate', child: Text('Create/Update Rent')),
+        DropdownMenuItem(
+            value: 'GenerateReport', child: Text('Generate Rent Report')),
       ],
-    );
-  }
+      onChanged: (String? value) async {
+        if (!context.mounted) return; // Check if the widget is still mounted
 
-  Widget _buildActionButton(
-      BuildContext context, String label, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: Text(label),
+        switch (value) {
+          case 'Edit':
+            final profiles =
+                await _rentService.allProfiles(creatorId: rent.creatorId).first;
+            final properties = await _propertyService
+                .allProperties(creatorId: rent.creatorId)
+                .first;
+            if (context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateOrUpdateRentView(
+                    rent: rent,
+                    profiles: profiles.toList(),
+                    properties: properties.toList(),
+                  ),
+                ),
+              );
+            }
+            break;
+          case 'Delete':
+            _rentService.deleteRent(id: rent.id);
+            if (context.mounted) {
+              Navigator.pop(context);
+            }
+            break;
+          
+          case 'AdditionalCosts':
+            if (context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AdditionalCostsPage(rentId: rent.id),
+                ),
+              );
+            }
+            break;
+          case 'CreateOrUpdate':
+            final profiles =
+                await _rentService.allProfiles(creatorId: rent.creatorId).first;
+            final properties = await _propertyService
+                .allProperties(creatorId: rent.creatorId)
+                .first;
+            if (context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateOrUpdateRentView(
+                    rent: rent,
+                    profiles: profiles.toList(),
+                    properties: properties.toList(),
+                  ),
+                ),
+              );
+            }
+            break;
+          case 'GenerateReport':
+            if (context.mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ReportViewPage(rentId: rent.id),
+                ),
+              );
+            }
+            break;
+          default:
+            break;
+        }
+      },
     );
-  }
-
-  void _loadUpdatedRent(BuildContext context, String rentId) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ReadRentPage(rentId: rentId),
-      ),
-    );
-  }
-
-  Future<void> _endContract(BuildContext context, CloudRent rent) async {
-    try {
-      await _rentService.updateRent(
-        id: rent.id,
-        rentAmount: rent.rentAmount,
-        contract: rent.contract,
-        dueDate: rent.dueDate,
-        endContract: 'Contract_Ended',
-        paymentStatus: rent.paymentStatus,
-      );
-      _loadUpdatedRent(context, rent.id);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to end contract: $e')),
-      );
-    }
   }
 }

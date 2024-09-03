@@ -7,7 +7,7 @@ class ExpenseView extends StatelessWidget {
   final String rentId;
   final RentService _rentService = RentService();
 
-  ExpenseView({Key? key, required this.rentId}) : super(key: key);
+  ExpenseView({super.key, required this.rentId});
 
   @override
   Widget build(BuildContext context) {

@@ -7,21 +7,21 @@ class ReadCompanyPage extends StatelessWidget {
   final String companyId;
   final RentService _rentService = RentService();
 
-  ReadCompanyPage({Key? key, required this.companyId}) : super(key: key);
+  ReadCompanyPage({super.key, required this.companyId});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Company Details')),
+      appBar: AppBar(title: const Text('Company Details')),
       body: FutureBuilder<CloudCompany>(
         future: _rentService.getCompany(id: companyId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
-            return Center(child: Text('No company data found'));
+            return const Center(child: Text('No company data found'));
           } else {
             final company = snapshot.data!;
             return SingleChildScrollView(

@@ -9,10 +9,10 @@ class ListProfileEmployee extends StatelessWidget {
   final String companyId;
 
   const ListProfileEmployee({
-    Key? key,
+    super.key,
     required this.creatorId,
     required this.companyId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -6,17 +6,16 @@ import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_serv
 class RelatedPenaltiesPage extends StatelessWidget {
   final String profileId;
 
-  const RelatedPenaltiesPage({Key? key, required this.profileId})
-      : super(key: key);
+  const RelatedPenaltiesPage({super.key, required this.profileId});
 
   @override
   Widget build(BuildContext context) {
-    final RentService _rentService = RentService();
+    final RentService rentService = RentService();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Related Penalties')),
       body: FutureBuilder<List<CloudRent>>(
-        future: _rentService.getRentsByProfileId(profileId: profileId),
+        future: rentService.getRentsByProfileId(profileId: profileId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -1,5 +1,5 @@
-// create_or_update_rents.dart
 import 'package:flutter/material.dart';
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import '../../auth/auth_service.dart';
@@ -7,14 +7,14 @@ import '../../auth/auth_service.dart';
 class CreateOrUpdateRentView extends StatefulWidget {
   final CloudRent? rent;
   final List<CloudProfile> profiles;
-  final List<DatabaseProperty> properties;
+  final List<CloudProperty> properties;
 
   const CreateOrUpdateRentView({
-    Key? key,
+    super.key,
     this.rent,
     required this.profiles,
     required this.properties,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateOrUpdateRentView> createState() => _CreateOrUpdateRentViewState();
@@ -24,7 +24,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
   final _formKey = GlobalKey<FormState>();
 
   late CloudProfile selectedProfile;
-  late DatabaseProperty selectedProperty;
+  late CloudProperty selectedProperty;
   late TextEditingController startDateController;
   late TextEditingController endDateController;
   late TextEditingController rentAmountController;
@@ -32,28 +32,53 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
   String selectedEndContractState = 'Contract_Ended';
 
   final RentService _rentService = RentService();
+  final PropertyService _propertyService = PropertyService();
   List<Map<String, TextEditingController>> payments = [];
+  List<CloudProperty> filteredProperties = [];
 
   @override
   void initState() {
     super.initState();
+
     selectedProfile = widget.rent != null
-        ? widget.profiles
-            .firstWhere((profile) => profile.id == widget.rent!.profileId)
+        ? widget.profiles.firstWhere(
+            (profile) => profile.id == widget.rent!.profileId,
+            orElse: () => widget.profiles.first)
         : widget.profiles.first;
+
+    _filterProperties();
+
     selectedProperty = widget.rent != null
-        ? widget.properties
-            .firstWhere((property) => property.id == widget.rent!.propertyId)
-        : widget.properties.first;
+        ? widget.properties.firstWhere(
+            (property) => property.id == widget.rent!.propertyId,
+            orElse: () => filteredProperties.isNotEmpty
+                ? filteredProperties.first
+                : widget.properties.first)
+        : filteredProperties.isNotEmpty
+            ? filteredProperties.first
+            : widget.properties.first;
+
     startDateController = TextEditingController(
-        text: widget.rent?.contract.split(',').first.split(': ').last ?? '');
+        text: widget.rent?.contract.split(',').last.split(': ').last ?? '');
     endDateController = TextEditingController(
         text: widget.rent?.contract.split(',').last.split(': ').last ?? '');
     rentAmountController =
         TextEditingController(text: widget.rent?.rentAmount.toString() ?? '');
     dueDateController = TextEditingController(text: widget.rent?.dueDate ?? '');
     selectedEndContractState = widget.rent?.endContract ?? 'Contract_Ended';
+
     _initializePayments();
+    _updatePropertyIsRented();
+  }
+
+  void _filterProperties() {
+    filteredProperties = widget.properties.where((property) {
+      if (widget.rent != null && property.id == widget.rent!.propertyId) {
+        return true;
+      }
+      return property.companyId == selectedProfile.companyId &&
+          !property.isRented;
+    }).toList();
   }
 
   void _initializePayments() {
@@ -77,14 +102,37 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
 
   void _addPayment() {
     final count = payments.length + 1;
+
+    String getOrdinalSuffix(int count) {
+      if (count % 100 >= 11 && count % 100 <= 13) {
+        return 'th';
+      }
+      switch (count % 10) {
+        case 1:
+          return 'st';
+        case 2:
+          return 'nd';
+        case 3:
+          return 'rd';
+        default:
+          return 'th';
+      }
+    }
+
     payments.add({
-      'paymentCount': TextEditingController(text: '${count}st payment'),
+      'paymentCount': TextEditingController(
+          text: '$count${getOrdinalSuffix(count)} payment'),
       'advancePayment': TextEditingController(),
       'paymentType': TextEditingController(),
       'paymentDate': TextEditingController(),
       'depositedOn': TextEditingController(),
       'paymentAmount': TextEditingController(),
     });
+    setState(() {});
+  }
+
+  void _removePayment(int index) {
+    payments.removeAt(index);
     setState(() {});
   }
 
@@ -112,10 +160,21 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     }).join('; ');
   }
 
+  void _updatePropertyIsRented() {
+    if (selectedEndContractState == 'Contract_Active' ||
+        selectedEndContractState == 'Contract_Prolonged') {
+      selectedProperty.isRented = true;
+    } else if (selectedEndContractState == 'Contract_Ended') {
+      selectedProperty.isRented = false;
+    }
+  }
+
   Future<void> _saveRent() async {
     if (_formKey.currentState!.validate()) {
       final rentAmount = double.tryParse(rentAmountController.text) ?? 0.0;
       final paymentStatus = _generatePaymentStatusString();
+
+      _updatePropertyIsRented();
 
       if (widget.rent == null) {
         final currentUser = AuthService.firebase().currentUser!;
@@ -144,7 +203,21 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
           paymentStatus: paymentStatus,
         );
       }
-      Navigator.of(context).pop();
+
+      await _propertyService.updateProperty(
+        id: selectedProperty.id,
+        propertyType: selectedProperty.propertyType,
+        floorNumber: selectedProperty.floorNumber,
+        propertyNumber: selectedProperty.propertyNumber,
+        sizeInSquareMeters: selectedProperty.sizeInSquareMeters,
+        pricePerMonth: selectedProperty.pricePerMonth,
+        description: selectedProperty.description,
+        isRented: selectedProperty.isRented,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -165,25 +238,29 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                 onChanged: (value) {
                   setState(() {
                     selectedProfile = value!;
+                    _filterProperties();
+                    selectedProperty = filteredProperties.isNotEmpty
+                        ? filteredProperties.first
+                        : selectedProperty;
                   });
                 },
                 items: widget.profiles.map((profile) {
                   return DropdownMenuItem<CloudProfile>(
                     value: profile,
-                    child: Text(profile.companyName ?? ''),
+                    child: Text(profile.companyName),
                   );
                 }).toList(),
                 decoration: const InputDecoration(labelText: 'Select Profile'),
               ),
-              DropdownButtonFormField<DatabaseProperty>(
+              DropdownButtonFormField<CloudProperty>(
                 value: selectedProperty,
                 onChanged: (value) {
                   setState(() {
                     selectedProperty = value!;
                   });
                 },
-                items: widget.properties.map((property) {
-                  return DropdownMenuItem<DatabaseProperty>(
+                items: filteredProperties.map((property) {
+                  return DropdownMenuItem<CloudProperty>(
                     value: property,
                     child: Text(property.propertyNumber),
                   );
@@ -206,12 +283,6 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                 controller: rentAmountController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Rent Amount'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a rent amount';
-                  }
-                  return null;
-                },
               ),
               TextFormField(
                 controller: dueDateController,
@@ -224,33 +295,48 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                 onChanged: (value) {
                   setState(() {
                     selectedEndContractState = value!;
+                    _updatePropertyIsRented();
                   });
                 },
                 items: [
-                  'Contract_Ended',
                   'Contract_Active',
-                  'Contract_Prolonged'
-                ].map((state) {
+                  'Contract_Prolonged',
+                  'Contract_Ended'
+                ].map((status) {
                   return DropdownMenuItem<String>(
-                    value: state,
-                    child: Text(state),
+                    value: status,
+                    child: Text(status),
                   );
                 }).toList(),
-                decoration:
-                    const InputDecoration(labelText: 'End Contract State'),
+                decoration: const InputDecoration(labelText: 'End Contract'),
               ),
               const SizedBox(height: 20),
-              Text('Payments', style: Theme.of(context).textTheme.headline6),
-              ...payments.map((payment) {
-                int index = payments.indexOf(payment) + 1;
+              ...payments.asMap().entries.map((entry) {
+                final index = entry.key;
+                final payment = entry.value;
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  key: ValueKey(index),
                   children: [
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Payment ${index + 1}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: () => _removePayment(index),
+                          icon: const Icon(Icons.remove_circle_outline),
+                          color: Colors.red,
+                        ),
+                      ],
+                    ),
                     TextFormField(
                       controller: payment['paymentCount'],
-                      readOnly: true,
                       decoration:
-                          InputDecoration(labelText: 'Payment $index Count'),
+                          const InputDecoration(labelText: 'Payment Count'),
                     ),
                     TextFormField(
                       controller: payment['advancePayment'],
@@ -272,26 +358,32 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     ),
                     TextFormField(
                       controller: payment['depositedOn'],
+                      readOnly: true,
                       decoration:
                           const InputDecoration(labelText: 'Deposited On'),
+                      onTap: () =>
+                          _selectDate(context, payment['depositedOn']!),
                     ),
                     TextFormField(
                       controller: payment['paymentAmount'],
+                      keyboardType: TextInputType.number,
                       decoration:
                           const InputDecoration(labelText: 'Payment Amount'),
                     ),
                     const SizedBox(height: 10),
                   ],
                 );
-              }).toList(),
-              ElevatedButton(
+              }),
+              TextButton.icon(
                 onPressed: _addPayment,
-                child: const Text('Add Payment'),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Payment'),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveRent,
-                child: Text(widget.rent == null ? 'Create' : 'Update'),
+                child:
+                    Text(widget.rent == null ? 'Create Rent' : 'Update Rent'),
               ),
             ],
           ),

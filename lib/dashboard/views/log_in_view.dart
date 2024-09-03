@@ -1,14 +1,17 @@
-// log_in_view.dart
+//log_in_view.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
-import 'package:r_and_e_monitor/dashboard/views/forgot_password.dart';
-import 'package:r_and_e_monitor/dashboard/views/utilities/Create%20user_checker.dart';
-import 'package:r_and_e_monitor/dashboard/views/utilities/arguments/error_dialog.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/user_checker.dart';
 import 'package:r_and_e_monitor/services/auth/auth_exceptions.dart';
-import 'package:r_and_e_monitor/services/auth/auth_service.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_bloc.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_event.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_state.dart';
+import 'package:r_and_e_monitor/services/helper/loading/loading_screen.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -23,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-
     _emailController.addListener(_validateInputs);
     _passwordController.addListener(_validateInputs);
   }
@@ -43,41 +45,6 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  Future<void> _login(BuildContext context) async {
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text.trim();
-    try {
-      await AuthService.firebase().logIn(
-        email: email,
-        password: password,
-      );
-      final user = AuthService.firebase().currentUser;
-      if (user?.isEmailVerified ?? false) {
-        await UserChecker.checkUser(context); // Use the UserChecker
-      } else {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          emailVerifyRoute,
-          (route) => false,
-        );
-      }
-    } on UserNotFoundAuthException {
-      await showErrorDialog(
-        context,
-        "User not found",
-      );
-    } on WrongPasswordAuthException {
-      await showErrorDialog(
-        context,
-        "Wrong password",
-      );
-    } on GenericAuthException {
-      await showErrorDialog(
-        context,
-        'Authentication Error!',
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,46 +53,77 @@ class _LoginPageState extends State<LoginPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                errorText: _emailController.text.trim().isEmpty
-                    ? 'Email is required'
-                    : null,
+        child: BlocListener<AuthBloc, AuthState>(
+          listener: (context, state) async {
+            if (state.isLoading) {
+              LoadingScreen().show(
+                  context: context,
+                  text: state.loadingText ?? 'Please wait...');
+            } else {
+              LoadingScreen().hide();
+            }
+
+            if (state is AuthStateLoggedOut) {
+              if (state.exception is UserNotFoundAuthException) {
+                await showErrorDialog(context, "User not found!");
+              } else if (state.exception is WrongPasswordAuthException) {
+                await showErrorDialog(context, "Wrong credentials");
+              } else if (state.exception is GenericAuthException) {
+                await showErrorDialog(context, "Authentication error");
+              }
+            } else if (state is AuthStateLoggedIn) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const UserChecker()),
+              );
+            } else if (state is AuthStateNeedsVerification) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const VerifyEmailView()),
+              );
+            }
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  errorText: _emailController.text.isEmpty
+                      ? 'Email cannot be empty'
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                errorText: _passwordController.text.trim().isEmpty
-                    ? 'Password is required'
-                    : null,
+              const SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  errorText: _passwordController.text.isEmpty
+                      ? 'Password cannot be empty'
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isButtonEnabled ? () => _login(context) : null,
-              child: const Text('Login'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ForgotPassword()),
-                );
-              },
-              child: const Text('Forgot Password?'),
-            ),
-          ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _isButtonEnabled
+                    ? () {
+                        final email = _emailController.text.trim();
+                        final password = _passwordController.text.trim();
+                        context.read<AuthBloc>().add(
+                              AuthEventLogIn(email, password),
+                            );
+                      }
+                    : null,
+                child: const Text('Login'),
+              ),
+            ],
+          ),
         ),
       ),
     );

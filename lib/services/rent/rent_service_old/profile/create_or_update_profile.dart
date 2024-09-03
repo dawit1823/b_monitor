@@ -7,7 +7,7 @@ import '../../../cloud/employee_services/cloud_rent_service.dart';
 class CreateOrUpdateProfile extends StatefulWidget {
   final CloudProfile? profile;
 
-  const CreateOrUpdateProfile({Key? key, this.profile}) : super(key: key);
+  const CreateOrUpdateProfile({super.key, this.profile});
 
   @override
   State<CreateOrUpdateProfile> createState() => _CreateOrUpdateProfileState();
@@ -115,7 +115,9 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
         contractInfo: contractInfo,
       );
     }
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -155,7 +157,7 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
                     items: companies.map((company) {
                       return DropdownMenuItem<CloudCompany>(
                         value: company,
-                        child: Text(company.companyName ?? ''),
+                        child: Text(company.companyName),
                       );
                     }).toList(),
                     decoration:
@@ -235,13 +237,13 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
                           const SizedBox(height: 24.0),
                           ElevatedButton(
                             onPressed: _saveProfile,
-                            child: const Text('Save'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 16.0,
                                 horizontal: 32.0,
                               ),
                             ),
+                            child: const Text('Save'),
                           ),
                         ],
                       ),

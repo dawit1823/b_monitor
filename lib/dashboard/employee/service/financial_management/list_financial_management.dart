@@ -9,21 +9,21 @@ class ListFinancialManagement extends StatelessWidget {
   final String companyId;
 
   const ListFinancialManagement({
-    Key? key,
+    super.key,
     required this.creatorId,
     required this.companyId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final RentService _rentService = RentService();
+    final RentService rentService = RentService();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Financial Management List'),
       ),
       body: StreamBuilder<Iterable<CloudFinancialManagement>>(
-        stream: _rentService.allFinancialReports(creatorId: creatorId),
+        stream: rentService.allFinancialReports(creatorId: creatorId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -1,6 +1,7 @@
 //cloud_rent_service.dart
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_storage_exceptions.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_storage_storage.dart';
@@ -23,6 +24,15 @@ class RentService {
 
   final CollectionReference employees =
       FirebaseFirestore.instance.collection('employees');
+
+  Future<Map<String, String>> getCompanyNames(List<String> companyIds) async {
+    final companyNames = <String, String>{};
+    for (var companyId in companyIds) {
+      final company = await getCompanyById(companyId: companyId);
+      companyNames[companyId] = company.companyName;
+    }
+    return companyNames;
+  }
 
   Future<CloudEmployee> createEmployee({
     required String creatorId,
@@ -56,15 +66,6 @@ class RentService {
       phoneNumber: phoneNumber,
       contractInfo: contractInfo,
     );
-  }
-
-  Future<CloudEmployee> getEmployee({required String id}) async {
-    final docSnapshot = await _firebaseStorage.getDocument(
-      collectionPath: 'employees',
-      documentId: id,
-    );
-    if (!docSnapshot.exists) throw CouldNotFindEmployeeException();
-    return CloudEmployee.fromFirestore(docSnapshot);
   }
 
   Future<CloudEmployee> updateEmployee({
@@ -111,9 +112,13 @@ class RentService {
   }
 
   Future<List<CloudEmployee>> getEmployeesByEmailAndRole({
-    required String email,
     required String role,
   }) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception("No authenticated user found.");
+    }
+    final email = currentUser.email;
     final querySnapshot = await employees
         .where('email', isEqualTo: email)
         .where('role', isEqualTo: role)
@@ -423,7 +428,8 @@ class RentService {
     return await getRent(id: id);
   }
 
-  Stream<Iterable<CloudRent>> allRents({required String creatorId}) {
+  Stream<Iterable<CloudRent>> allRents(
+      {required String creatorId, String? companyId}) {
     return rents
         .where('creatorId', isEqualTo: creatorId)
         .snapshots()

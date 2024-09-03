@@ -1,5 +1,5 @@
+//landing_page.dart
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/dashboard/employee/employee_login_page.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 
 class LandingPage extends StatelessWidget {
@@ -24,17 +24,6 @@ class LandingPage extends StatelessWidget {
               onPressed: () => Navigator.pushNamed(context, signUpRoute),
               child: const Text('Sign Up'),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const EmployeeLoginPage(),
-                ),
-              ),
-              child: const Text('Accountant Login'),
-            ),
-            // Add more buttons for other roles
           ],
         ),
       ),

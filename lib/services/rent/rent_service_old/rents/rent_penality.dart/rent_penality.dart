@@ -5,7 +5,7 @@ import 'related_penalties.dart'; // Import the related penalties page
 
 class RentPenaltyPage extends StatefulWidget {
   final String rentId;
-  const RentPenaltyPage({Key? key, required this.rentId}) : super(key: key);
+  const RentPenaltyPage({super.key, required this.rentId});
 
   @override
   State<RentPenaltyPage> createState() => _RentPenaltyPageState();

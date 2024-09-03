@@ -1,4 +1,3 @@
-// create_or_update_financial_management.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -9,14 +8,14 @@ class CreateOrUpdateFinancialManagement extends StatefulWidget {
   final String companyId;
 
   const CreateOrUpdateFinancialManagement({
-    Key? key,
+    super.key,
     this.report,
     required this.creatorId,
     required this.companyId,
-  }) : super(key: key);
+  });
 
   @override
-  _CreateOrUpdateFinancialManagementState createState() =>
+  State<CreateOrUpdateFinancialManagement> createState() =>
       _CreateOrUpdateFinancialManagementState();
 }
 
@@ -72,8 +71,14 @@ class _CreateOrUpdateFinancialManagementState
         txnDate: txnDate,
       );
     }
+  }
 
-    Navigator.of(context).pop();
+  void _handleSave() {
+    _saveFinancialReport().then((_) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
@@ -107,7 +112,7 @@ class _CreateOrUpdateFinancialManagementState
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _saveFinancialReport,
+              onPressed: _handleSave,
               child: Text(widget.report == null ? 'Create' : 'Update'),
             ),
           ],

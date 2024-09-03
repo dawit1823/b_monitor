@@ -7,8 +7,7 @@ class CreateOrUpdateExpense extends StatefulWidget {
   final CloudExpenses? expense;
   final String? rentId;
 
-  const CreateOrUpdateExpense({Key? key, this.expense, this.rentId})
-      : super(key: key);
+  const CreateOrUpdateExpense({super.key, this.expense, this.rentId});
 
   @override
   State<CreateOrUpdateExpense> createState() => _CreateOrUpdateExpenseState();
@@ -146,7 +145,9 @@ class _CreateOrUpdateExpenseState extends State<CreateOrUpdateExpense> {
         );
       }
 
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 }

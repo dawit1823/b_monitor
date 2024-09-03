@@ -6,7 +6,7 @@ import '../../rent/rent_service_old/rents/rent_penality.dart/rent_penality.dart'
 class AdditionalCostsPage extends StatelessWidget {
   final String rentId;
 
-  const AdditionalCostsPage({Key? key, required this.rentId}) : super(key: key);
+  const AdditionalCostsPage({super.key, required this.rentId});
 
   @override
   Widget build(BuildContext context) {

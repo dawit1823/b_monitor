@@ -33,7 +33,7 @@ Future<void> generateAndPrintReport(
                   ),
                   pw.Text(
                     report.reportDate,
-                    style: pw.TextStyle(fontSize: 12),
+                    style: const pw.TextStyle(fontSize: 12),
                   ),
                 ],
               ),
@@ -53,7 +53,7 @@ Future<void> generateAndPrintReport(
               pw.SizedBox(height: 32),
               pw.Text(
                 'To: ${profile.firstName} ${profile.lastName}',
-                style: pw.TextStyle(fontSize: 12),
+                style: const pw.TextStyle(fontSize: 12),
               ),
               pw.SizedBox(height: 16),
               pw.Align(
@@ -70,7 +70,7 @@ Future<void> generateAndPrintReport(
               pw.SizedBox(height: 16),
               pw.Text(
                 report.reportContent,
-                style: pw.TextStyle(fontSize: 14),
+                style: const pw.TextStyle(fontSize: 14),
                 textAlign: pw.TextAlign.justify,
               ),
               pw.SizedBox(height: 32),
@@ -78,7 +78,7 @@ Future<void> generateAndPrintReport(
                 alignment: pw.Alignment.centerRight,
                 child: pw.Text(
                   'CC: ${report.carbonCopy}',
-                  style: pw.TextStyle(fontSize: 12),
+                  style: const pw.TextStyle(fontSize: 12),
                 ),
               ),
               pw.SizedBox(height: 32),
@@ -96,7 +96,7 @@ Future<void> generateAndPrintReport(
               pw.Divider(),
               pw.Text(
                 'Address: ${profile.address}',
-                style: pw.TextStyle(fontSize: 12),
+                style: const pw.TextStyle(fontSize: 12),
               ),
             ],
           ),

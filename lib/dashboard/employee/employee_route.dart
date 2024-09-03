@@ -1,68 +1,64 @@
-// employee_route.dart
+//employee_route.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
+import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_bloc.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/auth_state.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/user_bloc.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/user_event.dart';
+import 'package:r_and_e_monitor/services/auth/bloc/user_state.dart';
 
 class EmployeeRoute extends StatelessWidget {
-  const EmployeeRoute({Key? key}) : super(key: key);
+  const EmployeeRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<CloudEmployee?>(
-      future: _getLoggedInEmployee(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else if (snapshot.hasError ||
-            !snapshot.hasData ||
-            snapshot.data == null) {
-          // If employee not found, navigate to admin dashboard
-          WidgetsBinding.instance?.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, adminDashboardRoute);
-          });
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else {
-          final employee = snapshot.data!;
-          return _navigateToDashboard(context, employee);
-        }
-      },
+    return Scaffold(
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthStateNeedsVerification) {
+            Navigator.pushReplacementNamed(context, emailVerifyRoute);
+          } else if (state is AuthStateLoggedOut) {
+            Navigator.pushReplacementNamed(context, landingPageRoute);
+          } else if (state is AuthStateLoggedIn) {
+            final user = state.user;
+            if (!user.isEmailVerified) {
+              Navigator.pushReplacementNamed(context, emailVerifyRoute);
+            } else {
+              context.read<UserBloc>().add(UserEventCheck(user.email));
+            }
+          }
+        },
+        child: BlocBuilder<UserBloc, UserState>(
+          builder: (context, state) {
+            if (state is UserStateChecking) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is UserStateFound) {
+              return _navigateToDashboard(context, state.employee);
+            } else if (state is UserStateNotFound) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, adminDashboardRoute);
+              });
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is UserStateFailure) {
+              return Center(
+                child: Text('Error: ${state.exception}'),
+              );
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
+      ),
     );
-  }
-
-  Future<CloudEmployee?> _getLoggedInEmployee() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
-
-    final email = user.email;
-    if (email == null) return null;
-
-    final firestore = FirebaseFirestore.instance;
-    final querySnapshot = await firestore
-        .collection('employees')
-        .where('email', isEqualTo: email)
-        .get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      final doc = querySnapshot.docs.first;
-      return CloudEmployee.fromFirestore(doc);
-    } else {
-      return null;
-    }
   }
 
   Widget _navigateToDashboard(BuildContext context, CloudEmployee employee) {
     final routeName = '${employee.role}DashboardRoute';
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.pushReplacementNamed(context, routeName, arguments: employee);
     });
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }

@@ -1,4 +1,3 @@
-// create_or_update_profile.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -8,12 +7,12 @@ class CreateOrUpdateProfile extends StatefulWidget {
   final String creatorId;
   final String companyId;
 
-  const CreateOrUpdateProfile(
-      {Key? key,
-      this.profile,
-      required this.creatorId,
-      required this.companyId})
-      : super(key: key);
+  const CreateOrUpdateProfile({
+    super.key,
+    this.profile,
+    required this.creatorId,
+    required this.companyId,
+  });
 
   @override
   State<CreateOrUpdateProfile> createState() => _CreateOrUpdateProfileState();
@@ -30,6 +29,7 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
       address,
       contractInfo;
   final RentService _rentService = RentService();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -44,36 +44,53 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
     contractInfo = widget.profile?.contractInfo ?? '';
   }
 
-  void _submitForm() async {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitting = true;
+      });
       _formKey.currentState!.save();
-      if (widget.profile == null) {
-        await RentService().createProfile(
-          creatorId: widget.creatorId,
-          companyId: widget.companyId,
-          companyName: companyName,
-          firstName: firstName,
-          lastName: lastName,
-          tin: tin,
-          email: email,
-          phoneNumber: phoneNumber,
-          address: address,
-          contractInfo: contractInfo,
-        );
-      } else {
-        await _rentService.updateProfile(
-          id: widget.profile!.id,
-          companyName: companyName,
-          firstName: firstName,
-          lastName: lastName,
-          tin: tin,
-          email: email,
-          phoneNumber: phoneNumber,
-          address: address,
-          contractInfo: contractInfo,
-        );
+
+      try {
+        if (widget.profile == null) {
+          await _rentService.createProfile(
+            creatorId: widget.creatorId,
+            companyId: widget.companyId,
+            companyName: companyName,
+            firstName: firstName,
+            lastName: lastName,
+            tin: tin,
+            email: email,
+            phoneNumber: phoneNumber,
+            address: address,
+            contractInfo: contractInfo,
+          );
+        } else {
+          await _rentService.updateProfile(
+            id: widget.profile!.id,
+            companyName: companyName,
+            firstName: firstName,
+            lastName: lastName,
+            tin: tin,
+            email: email,
+            phoneNumber: phoneNumber,
+            address: address,
+            contractInfo: contractInfo,
+          );
+        }
+        if (mounted) {
+          Navigator.pop(
+              context); // Safely navigate back only if the widget is still mounted.
+        }
+      } catch (e) {
+        // Handle errors (e.g., show a snackbar or dialog)
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
       }
-      Navigator.pop(context);
     }
   }
 
@@ -132,8 +149,10 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Save'),
+                onPressed: _isSubmitting ? null : _submitForm,
+                child: _isSubmitting
+                    ? const CircularProgressIndicator()
+                    : const Text('Save'),
               ),
             ],
           ),

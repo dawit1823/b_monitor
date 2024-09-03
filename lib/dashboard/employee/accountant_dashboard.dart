@@ -1,4 +1,4 @@
-// accountant_dashboard.dart
+//accountant_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/employee/service/financial_management/list_financial_management.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
@@ -9,8 +9,7 @@ import 'package:r_and_e_monitor/services/cloud/employee_services/profile/list_pr
 class AccountantDashboard extends StatelessWidget {
   final CloudEmployee employee;
 
-  const AccountantDashboard({Key? key, required this.employee})
-      : super(key: key);
+  const AccountantDashboard({super.key, required this.employee});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +20,12 @@ class AccountantDashboard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              bool logoutConfirmed = await showLogoutDialog(context);
+              bool logoutConfirmed = await _showLogoutDialog(context);
+
               if (logoutConfirmed) {
                 await AuthService.firebase().signOut();
-                Navigator.pushReplacementNamed(context, homepageRoute);
+                if (!context.mounted) return;
+                Navigator.pushReplacementNamed(context, landingPageRoute);
               }
             },
           ),
@@ -34,58 +35,43 @@ class AccountantDashboard extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                '${employee.name} - Accountant Dashboard',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+            UserAccountsDrawerHeader(
+              accountName: Text('$employee.name'),
+              accountEmail: Text('$employee.email'),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Text(
+                  employee.name[0],
+                  style: const TextStyle(fontSize: 40.0),
                 ),
               ),
             ),
-            ListTile(
-              title: const Text('Profile List'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ListProfileEmployee(
-                      creatorId: employee.creatorId,
-                      companyId: employee.companyId,
-                    ),
-                  ),
-                );
-              },
+            _buildDrawerItem(
+              context: context,
+              title: 'Profile List',
+              destination: ListProfileEmployee(
+                creatorId: employee.creatorId,
+                companyId: employee.companyId,
+              ),
             ),
-            ListTile(
-              title: const Text('Financial Reports'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ListFinancialManagement(
-                      creatorId: employee.creatorId,
-                      companyId: employee.companyId,
-                    ),
-                  ),
-                );
-              },
+            _buildDrawerItem(
+              context: context,
+              title: 'Financial Reports',
+              destination: ListFinancialManagement(
+                creatorId: employee.creatorId,
+                companyId: employee.companyId,
+              ),
             ),
             // Add more list tiles for other accountant-specific options
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: const Padding(
+        padding: EdgeInsets.all(20.0),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
+            children: [
               Text(
                 'Welcome to the Accountant Dashboard!',
                 style: TextStyle(fontSize: 24),
@@ -103,7 +89,23 @@ class AccountantDashboard extends StatelessWidget {
     );
   }
 
-  Future<bool> showLogoutDialog(BuildContext context) async {
+  ListTile _buildDrawerItem(
+      {required BuildContext context,
+      required String title,
+      required Widget destination}) {
+    return ListTile(
+      title: Text(title),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+    );
+  }
+
+  Future<bool> _showLogoutDialog(BuildContext context) async {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {

@@ -6,8 +6,7 @@ import '../employee_services/cloud_rent_service.dart';
 class CreateOrUpdateFinancialManagement extends StatefulWidget {
   final CloudFinancialManagement? financialReport;
 
-  const CreateOrUpdateFinancialManagement({Key? key, this.financialReport})
-      : super(key: key);
+  const CreateOrUpdateFinancialManagement({super.key, this.financialReport});
 
   @override
   State<CreateOrUpdateFinancialManagement> createState() =>
@@ -46,19 +45,23 @@ class _CreateOrUpdateFinancialManagementState
       _currentUserId = currentUser.id;
       final companies =
           await _rentService.getCompaniesByCreatorId(creatorId: _currentUserId);
-      setState(() {
-        _companies = companies;
-        selectedCompany = widget.financialReport != null
-            ? companies.firstWhere(
-                (company) => company.id == widget.financialReport!.companyId)
-            : (companies.isNotEmpty ? companies.first : null);
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _companies = companies;
+          selectedCompany = widget.financialReport != null
+              ? companies.firstWhere(
+                  (company) => company.id == widget.financialReport!.companyId)
+              : (companies.isNotEmpty ? companies.first : null);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error fetching companies: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error fetching companies: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -72,37 +75,43 @@ class _CreateOrUpdateFinancialManagementState
   }
 
   Future<void> _saveFinancialReport() async {
+    if (!_formKey.currentState!.validate()) return;
+
     try {
       if (selectedCompany == null) {
         throw Exception('Please select a company.');
       }
-      if (_formKey.currentState!.validate()) {
-        if (widget.financialReport == null) {
-          await _rentService.createFinancialReport(
-            creatorId: _currentUserId,
-            companyId: selectedCompany!.id,
-            txnType: _txnTypeController.text,
-            discription: _descriptionController.text,
-            totalAmount: _totalAmountController.text,
-            txnDate: _txnDateController.text,
-          );
-        } else {
-          await _rentService.updateFinancialReport(
-            id: widget.financialReport!.id,
-            txnType: _txnTypeController.text,
-            discription: _descriptionController.text,
-            totalAmount: _totalAmountController.text,
-            txnDate: _txnDateController.text,
-          );
-        }
+
+      if (widget.financialReport == null) {
+        await _rentService.createFinancialReport(
+          creatorId: _currentUserId,
+          companyId: selectedCompany!.id,
+          txnType: _txnTypeController.text,
+          discription: _descriptionController.text,
+          totalAmount: _totalAmountController.text,
+          txnDate: _txnDateController.text,
+        );
+      } else {
+        await _rentService.updateFinancialReport(
+          id: widget.financialReport!.id,
+          txnType: _txnTypeController.text,
+          discription: _descriptionController.text,
+          totalAmount: _totalAmountController.text,
+          txnDate: _txnDateController.text,
+        );
+      }
+
+      if (mounted) {
         Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving financial report: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving financial report: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -146,7 +155,7 @@ class _CreateOrUpdateFinancialManagementState
                 items: _companies.map((company) {
                   return DropdownMenuItem<CloudCompany>(
                     value: company,
-                    child: Text(company.companyName ?? ''),
+                    child: Text(company.companyName),
                   );
                 }).toList(),
                 decoration: const InputDecoration(labelText: 'Select Company'),

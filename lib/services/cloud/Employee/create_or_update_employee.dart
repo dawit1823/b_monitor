@@ -1,3 +1,4 @@
+//create_or_update_employee.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../auth/auth_service.dart';
@@ -8,9 +9,9 @@ class CreateOrUpdateEmployee extends StatefulWidget {
   final CloudEmployee? employee;
 
   const CreateOrUpdateEmployee({
-    Key? key,
+    super.key,
     this.employee,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateOrUpdateEmployee> createState() => _CreateOrUpdateEmployeeState();
@@ -24,7 +25,10 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
   late String _phoneNumber;
   late String _contractInfo;
   late String _companyId;
+  late String _salary;
+  late String _contractDate;
   final RentService _rentService = RentService();
+  final TextEditingController _contractDateController = TextEditingController();
 
   @override
   void initState() {
@@ -36,6 +40,11 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
       _phoneNumber = widget.employee!.phoneNumber;
       _contractInfo = widget.employee!.contractInfo;
       _companyId = widget.employee!.companyId;
+      _salary =
+          widget.employee!.contractInfo.split(';')[0].split(':')[1].trim();
+      _contractDate =
+          widget.employee!.contractInfo.split(';')[1].split(':')[1].trim();
+      _contractDateController.text = _contractDate;
     } else {
       _name = '';
       _role = 'accountant';
@@ -43,6 +52,8 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
       _phoneNumber = '';
       _contractInfo = '';
       _companyId = '';
+      _salary = '';
+      _contractDate = '';
     }
   }
 
@@ -61,40 +72,65 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
             children: [
               TextFormField(
                 initialValue: _name,
-                decoration: InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(labelText: 'Name'),
                 validator: (value) => value!.isEmpty ? 'Enter name' : null,
                 onSaved: (value) => _name = value!,
               ),
               TextFormField(
                 initialValue: _email,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) => value!.isEmpty ? 'Enter email' : null,
                 onSaved: (value) => _email = value!,
               ),
               TextFormField(
                 initialValue: _phoneNumber,
-                decoration: InputDecoration(labelText: 'Phone Number'),
+                decoration: const InputDecoration(labelText: 'Phone Number'),
                 validator: (value) =>
                     value!.isEmpty ? 'Enter phone number' : null,
                 onSaved: (value) => _phoneNumber = value!,
               ),
               TextFormField(
-                initialValue: _contractInfo,
-                decoration: InputDecoration(labelText: 'Contract Info'),
+                initialValue: _salary,
+                decoration: const InputDecoration(labelText: 'Salary'),
+                validator: (value) => value!.isEmpty ? 'Enter salary' : null,
+                onSaved: (value) => _salary = value!,
+              ),
+              TextFormField(
+                controller: _contractDateController,
+                decoration: const InputDecoration(
+                  labelText: 'Contract Date',
+                  hintText: 'YYYY-MM-DD',
+                ),
                 validator: (value) =>
-                    value!.isEmpty ? 'Enter contract info' : null,
-                onSaved: (value) => _contractInfo = value!,
+                    value!.isEmpty ? 'Enter contract date' : null,
+                onSaved: (value) => _contractDate = value!,
+                onTap: () async {
+                  FocusScope.of(context).requestFocus(FocusNode());
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2101),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      _contractDate =
+                          pickedDate.toIso8601String().split('T').first;
+                      _contractDateController.text = _contractDate;
+                    });
+                  }
+                },
               ),
               FutureBuilder<QuerySnapshot>(
                 future: _rentService.companies.get(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return CircularProgressIndicator();
+                    return const CircularProgressIndicator();
                   }
                   final companies = snapshot.data!.docs;
                   return DropdownButtonFormField(
                     value: _companyId.isEmpty ? null : _companyId,
-                    decoration: InputDecoration(labelText: 'Company'),
+                    decoration: const InputDecoration(labelText: 'Company'),
                     items: companies.map((doc) {
                       final company = doc['companyName'];
                       return DropdownMenuItem(
@@ -114,13 +150,14 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
               ),
               DropdownButtonFormField(
                 value: _role,
-                decoration: InputDecoration(labelText: 'Role'),
-                items: ['accountant', 'secretary', 'manager']
-                    .map((role) => DropdownMenuItem(
-                          value: role,
-                          child: Text(role),
-                        ))
-                    .toList(),
+                decoration: const InputDecoration(labelText: 'Role'),
+                items:
+                    ['accountant', 'secretary', 'manager', 'security', 'other']
+                        .map((role) => DropdownMenuItem(
+                              value: role,
+                              child: Text(role),
+                            ))
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     _role = value!;
@@ -128,7 +165,7 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
                 },
                 validator: (value) => value == null ? 'Select a role' : null,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,
                 child: Text(widget.employee == null ? 'Create' : 'Update'),
@@ -143,6 +180,8 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
   void _saveForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      _contractInfo = 'Salary: $_salary; Contract Date: $_contractDate';
+
       if (widget.employee == null) {
         _rentService.createEmployee(
           creatorId: AuthService.firebase().currentUser!.id,

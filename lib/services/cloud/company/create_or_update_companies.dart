@@ -7,7 +7,7 @@ import '../employee_services/cloud_rent_service.dart';
 class CreateOrUpdateCompany extends StatefulWidget {
   final CloudCompany? company;
 
-  const CreateOrUpdateCompany({Key? key, this.company}) : super(key: key);
+  const CreateOrUpdateCompany({super.key, this.company});
 
   @override
   State<CreateOrUpdateCompany> createState() => _CreateOrUpdateCompanyState();
@@ -62,7 +62,13 @@ class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {
         companyPhone: _phoneController.text,
       );
     }
-    Navigator.pop(context);
+  }
+
+  void _onSubmit() async {
+    await _createOrUpdateCompany();
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -78,27 +84,27 @@ class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Company Name'),
+              decoration: const InputDecoration(labelText: 'Company Name'),
             ),
             TextField(
               controller: _ownerController,
-              decoration: InputDecoration(labelText: 'Company Owner'),
+              decoration: const InputDecoration(labelText: 'Company Owner'),
             ),
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email Address'),
+              decoration: const InputDecoration(labelText: 'Email Address'),
             ),
             TextField(
               controller: _phoneController,
-              decoration: InputDecoration(labelText: 'Phone'),
+              decoration: const InputDecoration(labelText: 'Phone'),
             ),
             TextField(
               controller: _addressController,
-              decoration: InputDecoration(labelText: 'Address'),
+              decoration: const InputDecoration(labelText: 'Address'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: _createOrUpdateCompany,
+              onPressed: _onSubmit,
               child: Text(widget.company == null ? 'Create' : 'Update'),
             ),
           ],

@@ -8,17 +8,7 @@ class ReportViewPage extends StatelessWidget {
   final String rentId;
   final RentService _rentService = RentService();
 
-  ReportViewPage({Key? key, required this.rentId}) : super(key: key);
-
-  Future<CloudProfile> _fetchProfile(String rentId) async {
-    final rent = await _rentService.getRent(id: rentId);
-    return await _rentService.getProfile(id: rent.profileId);
-  }
-
-  Future<CloudCompany> _fetchCompanyName(String companyId) async {
-    return await _rentService.getCompany(
-        id: companyId); // Assuming you have a method to fetch company details
-  }
+  ReportViewPage({super.key, required this.rentId});
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +63,7 @@ class ReportViewPage extends StatelessWidget {
                         await generateAndPrintReport(
                             rent, profile, report, company);
                       } catch (e) {
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                               content: Text('Failed to generate report: $e')),
