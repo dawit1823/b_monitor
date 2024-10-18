@@ -1,3 +1,4 @@
+//rent_list.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
@@ -104,144 +105,168 @@ class _RentListState extends State<RentList> {
           ),
         ],
       ),
-      body: _isInitialized
-          ? StreamBuilder<Iterable<CloudRent>>(
-              stream: _rentService.allRents(creatorId: userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  LoadingScreen().show(
-                    context: context,
-                    text: 'Loading rents...',
-                  );
-                  return Container();
-                } else {
-                  LoadingScreen().hide();
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Error loading rents: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('No rents available.'),
-                  );
-                }
-
-                final allRents = snapshot.data!;
-                final rentsByCompany = <String, Map<String, List<CloudRent>>>{};
-
-                for (var rent in allRents) {
-                  rentsByCompany.putIfAbsent(rent.companyId, () {
-                    return {
-                      'Contract_Ended': [],
-                      'Contract_Active': [],
-                      'Contract_Prolonged': [],
-                    };
-                  })[rent.endContract]!.add(rent);
-                }
-
-                return FutureBuilder<Map<String, String>>(
-                  future: _fetchCompanyNames(rentsByCompany.keys.toList()),
-                  builder: (context, companySnapshot) {
-                    if (companySnapshot.connectionState ==
-                        ConnectionState.waiting) {
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/bg/background_dashboard.jpg', // Add your image asset path
+              fit: BoxFit.cover,
+            ),
+          ),
+          // Main Content
+          _isInitialized
+              ? StreamBuilder<Iterable<CloudRent>>(
+                  stream: _rentService.allRents(creatorId: userId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       LoadingScreen().show(
                         context: context,
-                        text: 'Loading company names...',
+                        text: 'Loading rents...',
                       );
                       return Container();
                     } else {
                       LoadingScreen().hide();
                     }
 
-                    if (companySnapshot.hasError) {
+                    if (snapshot.hasError) {
                       return Center(
                         child: Text(
-                          'Error loading company names: ${companySnapshot.error}',
+                          'Error loading rents: ${snapshot.error}',
                           style: const TextStyle(color: Colors.red),
                         ),
                       );
                     }
 
-                    final companyNames = companySnapshot.data!;
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(
+                        child: Text('No rents available.'),
+                      );
+                    }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(8.0),
-                      itemCount: rentsByCompany.length,
-                      itemBuilder: (context, index) {
-                        final companyId = rentsByCompany.keys.elementAt(index);
-                        final companyName =
-                            companyNames[companyId] ?? 'Unknown Company';
-                        final groupedRents = rentsByCompany[companyId]!;
+                    final allRents = snapshot.data!;
+                    final rentsByCompany =
+                        <String, Map<String, List<CloudRent>>>{};
 
-                        return Card(
-                          elevation: 4.0,
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: ExpansionTile(
-                            title: Text(
-                              companyName,
-                              style: const TextStyle(
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    for (var rent in allRents) {
+                      rentsByCompany.putIfAbsent(rent.companyId, () {
+                        return {
+                          'Contract_Ended': [],
+                          'Contract_Active': [],
+                          'Contract_Prolonged': [],
+                        };
+                      })[rent.endContract]!.add(rent);
+                    }
+
+                    return FutureBuilder<Map<String, String>>(
+                      future: _fetchCompanyNames(rentsByCompany.keys.toList()),
+                      builder: (context, companySnapshot) {
+                        if (companySnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          LoadingScreen().show(
+                            context: context,
+                            text: 'Loading company names...',
+                          );
+                          return Container();
+                        } else {
+                          LoadingScreen().hide();
+                        }
+
+                        if (companySnapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error loading company names: ${companySnapshot.error}',
+                              style: const TextStyle(color: Colors.red),
                             ),
-                            children: [
-                              _buildRentSection(
-                                title: 'Contract Ended',
-                                rents: groupedRents['Contract_Ended']!,
-                                context: context,
+                          );
+                        }
+
+                        final companyNames = companySnapshot.data!;
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(8.0),
+                          itemCount: rentsByCompany.length,
+                          itemBuilder: (context, index) {
+                            final companyId =
+                                rentsByCompany.keys.elementAt(index);
+                            final companyName =
+                                companyNames[companyId] ?? 'Unknown Company';
+                            final groupedRents = rentsByCompany[companyId]!;
+
+                            return Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15.0),
                               ),
-                              _buildRentSection(
-                                title: 'Contract Active',
-                                rents: groupedRents['Contract_Active']!,
-                                context: context,
-                              ),
-                              _buildRentSection(
-                                title: 'Contract Prolonged',
-                                rents: groupedRents['Contract_Prolonged']!,
-                                context: context,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            GenerateRentReport(
-                                          companyId: companyId,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.insert_chart),
-                                  label: const Text('View Rent Report'),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12.0,
-                                      horizontal: 20.0,
-                                    ),
+                              elevation: 6.0,
+                              color: Colors.white.withOpacity(0.2),
+                              shadowColor: const Color.fromARGB(255, 0, 0, 0),
+                              margin:
+                                  const EdgeInsets.symmetric(vertical: 10.0),
+                              child: ExpansionTile(
+                                title: Text(
+                                  companyName,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                children: [
+                                  _buildRentSection(
+                                    title: 'Contract Ended',
+                                    rents: groupedRents['Contract_Ended']!,
+                                    context: context,
+                                  ),
+                                  _buildRentSection(
+                                    title: 'Contract Active',
+                                    rents: groupedRents['Contract_Active']!,
+                                    context: context,
+                                  ),
+                                  _buildRentSection(
+                                    title: 'Contract Prolonged',
+                                    rents: groupedRents['Contract_Prolonged']!,
+                                    context: context,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                GenerateRentReport(
+                                                    companyId: companyId),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.insert_chart),
+                                      label: const Text('View Rent Report'),
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12.0,
+                                          horizontal: 20.0,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10.0),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
                     );
                   },
-                );
-              },
-            )
-          : const Center(
-              child: Text('Initializing...'),
-            ),
+                )
+              : const Center(
+                  child: Text('Initializing...'),
+                ),
+        ],
+      ),
     );
   }
 
@@ -252,13 +277,28 @@ class _RentListState extends State<RentList> {
   }) {
     if (rents.isEmpty) {
       return ListTile(
-        title: Text('$title (0)'),
-        subtitle: const Text('No rents available in this category.'),
+        title: Text(
+          '$title (0)',
+          style: const TextStyle(
+            color: Colors.black,
+          ),
+        ),
+        subtitle: const Text(
+          'No rents available in this category.',
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
       );
     }
 
     return ExpansionTile(
-      title: Text('$title (${rents.length})'),
+      title: Text(
+        '$title (${rents.length})',
+        style: const TextStyle(
+          color: Colors.black,
+        ),
+      ),
       children: rents.map((rent) {
         final property = _properties.firstWhere(
           (prop) => prop.id == rent.propertyId,
@@ -282,6 +322,7 @@ class _RentListState extends State<RentList> {
           ),
           isThreeLine: true,
           trailing: PopupMenuButton<String>(
+            color: Colors.white.withOpacity(0.8),
             onSelected: (value) async {
               if (value == 'View') {
                 Navigator.of(context).push(

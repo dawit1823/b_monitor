@@ -1,5 +1,6 @@
 //read_rent_page.dart
 import 'package:flutter/material.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/profiles/read_profile.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/additional_costs.dart';
@@ -23,100 +24,116 @@ class ReadRentPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('View Rent'),
         backgroundColor: const Color.fromARGB(255, 75, 153, 255),
-        elevation: 0,
       ),
-      body: FutureBuilder<CloudRent>(
-        future: _rentService.getRent(id: rentId),
-        builder: (context, rentSnapshot) {
-          if (rentSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (rentSnapshot.hasError) {
-            return Center(child: Text('Error: ${rentSnapshot.error}'));
-          } else if (!rentSnapshot.hasData) {
-            return const Center(child: Text('No data found'));
-          } else {
-            final rent = rentSnapshot.data!;
-            return FutureBuilder<CloudProfile>(
-              future: _rentService.getProfile(id: rent.profileId),
-              builder: (context, profileSnapshot) {
-                if (profileSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (profileSnapshot.hasError) {
-                  return Center(child: Text('Error: ${profileSnapshot.error}'));
-                } else if (!profileSnapshot.hasData) {
-                  return const Center(child: Text('No profile data found'));
-                } else {
-                  final profile = profileSnapshot.data!;
-                  return FutureBuilder<CloudProperty>(
-                    future: _propertyService.getProperty(id: rent.propertyId),
-                    builder: (context, propertySnapshot) {
-                      if (propertySnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (propertySnapshot.hasError) {
-                        return Center(
-                            child: Text('Error: ${propertySnapshot.error}'));
-                      } else if (!propertySnapshot.hasData) {
-                        return const Center(
-                            child: Text('No property data found'));
-                      } else {
-                        final property = propertySnapshot.data!;
-                        return FutureBuilder<CloudCompany>(
-                          future:
-                              _rentService.getCompany(id: profile.companyId),
-                          builder: (context, companySnapshot) {
-                            if (companySnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            } else if (companySnapshot.hasError) {
-                              return Center(
-                                  child:
-                                      Text('Error: ${companySnapshot.error}'));
-                            } else if (!companySnapshot.hasData) {
-                              return const Center(
-                                  child: Text('No company data found'));
-                            } else {
-                              final company = companySnapshot.data!;
-                              return SingleChildScrollView(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildProfileCard(context, profile),
-                                    const SizedBox(height: 10),
-                                    _buildPropertyCard(context, property),
-                                    const SizedBox(height: 10),
-                                    _buildCompanyCard(context, company),
-                                    const SizedBox(height: 20),
-                                    _buildRentDetailsCard(context, rent),
-                                    const SizedBox(height: 20),
-                                    _buildDropdownMenu(context, rent, profile),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                        );
-                      }
-                    },
-                  );
-                }
-              },
-            );
-          }
-        },
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/bg/background_dashboard.jpg',
+              fit: BoxFit.cover, // Try changing this to fill or fitHeight
+            ),
+          ),
+
+          // Main content
+          FutureBuilder<CloudRent>(
+            future: _rentService.getRent(id: rentId),
+            builder: (context, rentSnapshot) {
+              if (rentSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (rentSnapshot.hasError) {
+                return Center(child: Text('Error: ${rentSnapshot.error}'));
+              } else if (!rentSnapshot.hasData) {
+                return const Center(child: Text('No data found'));
+              } else {
+                final rent = rentSnapshot.data!;
+                return FutureBuilder<CloudProfile>(
+                  future: _rentService.getProfile(id: rent.profileId),
+                  builder: (context, profileSnapshot) {
+                    if (profileSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (profileSnapshot.hasError) {
+                      return Center(
+                          child: Text('Error: ${profileSnapshot.error}'));
+                    } else if (!profileSnapshot.hasData) {
+                      return const Center(child: Text('No profile data found'));
+                    } else {
+                      final profile = profileSnapshot.data!;
+                      return FutureBuilder<CloudProperty>(
+                        future:
+                            _propertyService.getProperty(id: rent.propertyId),
+                        builder: (context, propertySnapshot) {
+                          if (propertySnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (propertySnapshot.hasError) {
+                            return Center(
+                                child:
+                                    Text('Error: ${propertySnapshot.error}'));
+                          } else if (!propertySnapshot.hasData) {
+                            return const Center(
+                                child: Text('No property data found'));
+                          } else {
+                            final property = propertySnapshot.data!;
+                            return FutureBuilder<CloudCompany>(
+                              future: _rentService.getCompany(
+                                  id: profile.companyId),
+                              builder: (context, companySnapshot) {
+                                if (companySnapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                } else if (companySnapshot.hasError) {
+                                  return Center(
+                                      child: Text(
+                                          'Error: ${companySnapshot.error}'));
+                                } else if (!companySnapshot.hasData) {
+                                  return const Center(
+                                      child: Text('No company data found'));
+                                } else {
+                                  final company = companySnapshot.data!;
+                                  return SingleChildScrollView(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      children: [
+                                        _buildProfileCard(context, profile),
+                                        const SizedBox(height: 10),
+                                        _buildPropertyCard(context, property),
+                                        const SizedBox(height: 10),
+                                        _buildCompanyCard(context, company),
+                                        const SizedBox(height: 20),
+                                        _buildRentDetailsCard(context, rent),
+                                        const SizedBox(height: 20),
+                                        _buildDropdownMenu(
+                                            context, rent, profile),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              },
+                            );
+                          }
+                        },
+                      );
+                    }
+                  },
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildProfileCard(BuildContext context, CloudProfile profile) {
     return Card(
-      elevation: 2,
+      elevation: 4,
       child: ListTile(
-        leading: const Icon(Icons.account_circle,
-            color: Color.fromARGB(255, 75, 153, 255)),
+        leading: const Icon(Icons.account_circle, color: Colors.black),
         title: Text(
           '${profile.firstName} ${profile.lastName}',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -138,10 +155,9 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildPropertyCard(BuildContext context, CloudProperty property) {
     return Card(
-      elevation: 2,
+      elevation: 4,
       child: ListTile(
-        leading:
-            const Icon(Icons.home, color: Color.fromARGB(255, 75, 153, 255)),
+        leading: const Icon(Icons.home, color: Colors.black),
         title: Text(
           'Property: ${property.propertyType}',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -163,10 +179,9 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildCompanyCard(BuildContext context, CloudCompany company) {
     return Card(
-      elevation: 2,
+      elevation: 4,
       child: ListTile(
-        leading: const Icon(Icons.business,
-            color: Color.fromARGB(255, 75, 153, 255)),
+        leading: const Icon(Icons.business, color: Colors.black),
         title: Text(
           company.companyName,
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -188,7 +203,8 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildRentDetailsCard(BuildContext context, CloudRent rent) {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      color: Colors.white.withOpacity(0.8),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -196,7 +212,10 @@ class ReadRentPage extends StatelessWidget {
           children: [
             const Text(
               'Rent Details',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black),
             ),
             const Divider(),
             _buildDetailRow('Contract', rent.contract),
@@ -222,11 +241,14 @@ class ReadRentPage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.black),
           ),
           const SizedBox(width: 8),
           Text(
             value,
+            style: const TextStyle(
+                fontWeight: FontWeight.normal, color: Colors.black),
           ),
         ],
       ),
@@ -242,13 +264,13 @@ class ReadRentPage extends StatelessWidget {
             Navigator.of(context).pop(); // Close the dialog when tapped outside
           },
           child: Dialog(
-            backgroundColor: Colors.transparent,
+            backgroundColor: Colors.white.withOpacity(0.1),
             child: GestureDetector(
               onTap: () {}, // Prevent dialog from closing when tapped inside
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(
@@ -262,7 +284,7 @@ class ReadRentPage extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: Color.fromARGB(255, 75, 153, 255),
+                          color: Colors.black,
                         ),
                       ),
                       const Divider(),
@@ -274,8 +296,7 @@ class ReadRentPage extends StatelessWidget {
                             Navigator.of(context).pop(); // Close the dialog
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 75, 153, 255),
+                            backgroundColor: Colors.purple,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
@@ -295,34 +316,43 @@ class ReadRentPage extends StatelessWidget {
   }
 
   Widget _buildPaymentStatusTable(String paymentStatus) {
-    // Assuming paymentStatus is a semicolon-separated string of rows
     final rows = paymentStatus.split('; ');
     final headers = [
       'Payment Count',
       'Advance Payment',
       'Payment Type',
       'Payment Date',
-      'Deposited On',
+      'Next Payment',
       'Payment Amount',
     ];
 
     return DataTable(
-      border: TableBorder.all(color: const Color.fromARGB(255, 75, 153, 255)),
+      border: TableBorder.all(color: Colors.black),
       columns: headers
-          .map((header) => DataColumn(
-                label: Text(
-                  header,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 75, 153, 255),
-                  ),
+          .map(
+            (header) => DataColumn(
+              label: Text(
+                header,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
       rows: rows.map((row) {
+        // Split the row into individual cells
         final cells = row.split(', ');
+
+        // Ensure each row has exactly 6 cells, fill missing ones if needed
+        final paddedCells = List<String>.from(cells);
+        while (paddedCells.length < headers.length) {
+          paddedCells.add(''); // Add empty string for missing cells
+        }
+
         return DataRow(
-          cells: cells.map((cell) => DataCell(Text(cell))).toList(),
+          cells: paddedCells.map((cell) => DataCell(Text(cell))).toList(),
         );
       }).toList(),
     );
@@ -334,17 +364,17 @@ class ReadRentPage extends StatelessWidget {
       decoration: InputDecoration(
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
         filled: true,
-        fillColor: Colors.grey[200],
+        fillColor: Colors.white.withOpacity(0.3),
       ),
       isExpanded: true,
-      hint: const Text("Select Action"),
+      hint: const Text(
+        "Options",
+      ),
       items: const [
         DropdownMenuItem(value: 'Edit', child: Text('Edit Rent')),
         DropdownMenuItem(value: 'Delete', child: Text('Delete Rent')),
         DropdownMenuItem(
-            value: 'AdditionalCosts', child: Text('Add Additional Costs')),
-        DropdownMenuItem(
-            value: 'CreateOrUpdate', child: Text('Create/Update Rent')),
+            value: 'AdditionalCosts', child: Text('Penality & Expenses')),
         DropdownMenuItem(
             value: 'GenerateReport', child: Text('Generate Rent Report')),
       ],
@@ -372,12 +402,12 @@ class ReadRentPage extends StatelessWidget {
             }
             break;
           case 'Delete':
-            _rentService.deleteRent(id: rent.id);
-            if (context.mounted) {
-              Navigator.pop(context);
+            final shouldDelete = await showDeleteDialog(context);
+            if (shouldDelete) {
+              await _rentService.deleteRent(id: rent.id);
             }
             break;
-          
+
           case 'AdditionalCosts':
             if (context.mounted) {
               Navigator.push(
@@ -388,25 +418,7 @@ class ReadRentPage extends StatelessWidget {
               );
             }
             break;
-          case 'CreateOrUpdate':
-            final profiles =
-                await _rentService.allProfiles(creatorId: rent.creatorId).first;
-            final properties = await _propertyService
-                .allProperties(creatorId: rent.creatorId)
-                .first;
-            if (context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateOrUpdateRentView(
-                    rent: rent,
-                    profiles: profiles.toList(),
-                    properties: properties.toList(),
-                  ),
-                ),
-              );
-            }
-            break;
+
           case 'GenerateReport':
             if (context.mounted) {
               Navigator.push(

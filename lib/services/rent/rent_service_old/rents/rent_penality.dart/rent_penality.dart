@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
-import 'related_penalties.dart'; // Import the related penalties page
+import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
+import 'related_penalties.dart';
 
 class RentPenaltyPage extends StatefulWidget {
   final String rentId;
@@ -13,6 +14,7 @@ class RentPenaltyPage extends StatefulWidget {
 
 class _RentPenaltyPageState extends State<RentPenaltyPage> {
   final RentService _rentService = RentService();
+  final PropertyService _propertyService = PropertyService();
   late Future<CloudRent> _rent;
 
   @override
@@ -27,19 +29,19 @@ class _RentPenaltyPageState extends State<RentPenaltyPage> {
       final daysOverdue = today.difference(dueDate).inDays;
       return daysOverdue * (rentAmount * 0.10); // 10% per day overdue
     }
-    return 0.0; // No penalty if not overdue
+    return 0.0;
   }
 
-  String getDaysPassed(DateTime dueDate) {
+  String getDaysPassedOrRemaining(DateTime dueDate) {
     final today = DateTime.now();
-    final daysPassed = today.difference(dueDate).inDays;
+    final difference = today.difference(dueDate).inDays;
 
-    if (daysPassed < 0 && daysPassed >= -5) {
-      return 'You have ${-daysPassed} days left';
-    } else if (daysPassed >= 0) {
-      return 'You have $daysPassed days overdue';
+    if (difference < 0) {
+      return '${-difference} days remaining';
+    } else if (difference == 0) {
+      return 'Rent is due today';
     } else {
-      return '${-daysPassed} days left';
+      return '$difference days overdue';
     }
   }
 
@@ -57,7 +59,7 @@ class _RentPenaltyPageState extends State<RentPenaltyPage> {
         } else {
           final rent = snapshot.data!;
           final dueDate = DateTime.parse(rent.dueDate);
-          final daysPassed = getDaysPassed(dueDate);
+          final daysPassedOrRemaining = getDaysPassedOrRemaining(dueDate);
           final penalty = calculatePenalty(dueDate, rent.rentAmount);
 
           return FutureBuilder<CloudProfile>(
@@ -71,30 +73,95 @@ class _RentPenaltyPageState extends State<RentPenaltyPage> {
                 return const Center(child: Text('Profile not found.'));
               } else {
                 final profile = profileSnapshot.data!;
-                return Column(
-                  children: [
-                    ListTile(
-                      title: Text(
-                          'Profile: ${profile.companyName.isNotEmpty ? profile.companyName : profile.firstName}'),
-                      subtitle: Text(
-                        'Due Date: ${rent.dueDate}\nDays Passed: $daysPassed\nPenalty: \$${penalty.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: daysPassed.contains('overdue')
-                              ? Colors.red
-                              : Colors.black,
+                return FutureBuilder<CloudProperty>(
+                  future: _propertyService.getProperty(id: rent.propertyId),
+                  builder: (context, propertySnapshot) {
+                    if (propertySnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (propertySnapshot.hasError) {
+                      return Center(
+                          child: Text('Error: ${propertySnapshot.error}'));
+                    } else if (!propertySnapshot.hasData) {
+                      return const Center(child: Text('Property not found.'));
+                    } else {
+                      final property = propertySnapshot.data!;
+                      return Container(
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(
+                                'assets/bg/background_dashboard.jpg'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) =>
-                              RelatedPenaltiesPage(profileId: rent.profileId),
-                        ));
-                      },
-                      child: const Text('View Related Penalties'),
-                    ),
-                  ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                elevation: 4.0,
+                                color: Colors.white.withOpacity(0.1),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Profile: ${profile.companyName.isNotEmpty ? profile.companyName : profile.firstName}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16.0,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'Property: ${property.propertyNumber}\nContract: ${rent.contract}\nDue Date: ${rent.dueDate}\nDays: $daysPassedOrRemaining\nPenalty: \$${penalty.toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          color: daysPassedOrRemaining
+                                                  .contains('overdue')
+                                              ? Colors.redAccent
+                                              : Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Center(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.purple,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 12),
+                                    textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            RelatedPenaltiesPage(
+                                                profileId: rent.profileId),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('View Related Penalties'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 );
               }
             },

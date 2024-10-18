@@ -1,10 +1,9 @@
-// generate_rent_report.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:open_file_plus/open_file_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -41,6 +40,7 @@ class GenerateRentReport extends StatelessWidget {
           'profile': profile,
           'firstPaymentDate': firstPaymentDate,
           'lastAdvancePayment': lastAdvancePayment,
+          'paymentStatus': rent.paymentStatus, // Add paymentStatus here
         });
       }
     }
@@ -83,16 +83,16 @@ class GenerateRentReport extends StatelessWidget {
           pw.TableHelper.fromTextArray(
             headers: [
               'No',
-              'Property No',
-              'Floor No',
+              'Property No.',
+              'Floor No.',
               'Size (sqm)',
-              'Rent Amount',
+              'Rent Amount/month',
               'Contract',
-              'Due Date',
-              'Months Left',
               'Profile Name',
-              'Payment Date (1st)',
-              'Advance Payment (Last)',
+              'Payment Date ',
+              'Advance Payment',
+              'Next Payment',
+              'Months Left',
             ],
             data: List<List<String>>.generate(
               rentDetailsList.length,
@@ -114,11 +114,11 @@ class GenerateRentReport extends StatelessWidget {
                   property.sizeInSquareMeters,
                   rent.rentAmount.toString(),
                   rent.contract,
+                  firstPaymentDate,
+                  lastAdvancePayment,
                   rent.dueDate,
                   monthsLeft.toString(),
                   '${profile.firstName} ${profile.lastName}',
-                  firstPaymentDate,
-                  lastAdvancePayment,
                 ];
               },
             ),
@@ -140,6 +140,106 @@ class GenerateRentReport extends StatelessWidget {
         showErrorDialog(context, "Failed to open PDF: ${result.message}");
       }
     }
+  }
+
+  void _showPaymentStatusDialog(BuildContext context, String paymentStatus) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // Close the dialog when tapped outside
+          },
+          child: Dialog(
+            backgroundColor: Colors.white.withOpacity(0.1),
+            child: GestureDetector(
+              onTap: () {}, // Prevent dialog from closing when tapped inside
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Payment Status',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const Divider(),
+                      _buildPaymentStatusTable(paymentStatus),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentStatusTable(String paymentStatus) {
+    final rows = paymentStatus.split('; ');
+    final headers = [
+      'Payment Count',
+      'Advance Payment',
+      'Payment Type',
+      'Payment Date',
+      'Next Payment',
+      'Payment Amount',
+    ];
+
+    return DataTable(
+      border: TableBorder.all(color: Colors.black),
+      columns: headers
+          .map(
+            (header) => DataColumn(
+              label: Text(
+                header,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          )
+          .toList(),
+      rows: rows.map((row) {
+        final cells = row.split(', ');
+        final paddedCells = List<String>.from(cells);
+        while (paddedCells.length < headers.length) {
+          paddedCells.add('');
+        }
+
+        return DataRow(
+          cells: paddedCells.map((cell) => DataCell(Text(cell))).toList(),
+        );
+      }).toList(),
+    );
   }
 
   @override
@@ -170,81 +270,79 @@ class GenerateRentReport extends StatelessWidget {
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
+                          border: TableBorder.all(
+                            color: Colors.grey, // Border color
+                            width: 1.5, // Border width
+                          ),
                           columns: const [
                             DataColumn(label: Text('No')),
                             DataColumn(label: Text('Property No')),
                             DataColumn(label: Text('Floor No')),
                             DataColumn(label: Text('Size (sqm)')),
-                            DataColumn(label: Text('Rent Amount')),
+                            DataColumn(label: Text('Rent Amount/month')),
                             DataColumn(label: Text('Contract')),
-                            DataColumn(label: Text('Due Date')),
-                            DataColumn(label: Text('Months Left')),
                             DataColumn(label: Text('Profile Name')),
-                            DataColumn(label: Text('Payment Date (1st)')),
-                            DataColumn(label: Text('Advance Payment (Last)')),
+                            DataColumn(label: Text('Payment Date ')),
+                            DataColumn(label: Text('Advance Payment')),
+                            DataColumn(label: Text('Next payment')),
+                            DataColumn(label: Text('Months Left')),
                           ],
-                          rows: List<DataRow>.generate(rentDetailsList.length,
-                              (index) {
-                            final rentDetail = rentDetailsList[index];
-                            final rent = rentDetail['rent'] as CloudRent;
-                            final property =
-                                rentDetail['property'] as CloudProperty;
-                            final profile =
-                                rentDetail['profile'] as CloudProfile;
-                            final firstPaymentDate =
-                                rentDetail['firstPaymentDate'];
-                            final lastAdvancePayment =
-                                rentDetail['lastAdvancePayment'];
-                            final DateTime dueDate =
-                                DateTime.parse(rent.dueDate);
-                            final monthsLeft =
-                                dueDate.difference(DateTime.now()).inDays ~/ 30;
+                          rows: List<DataRow>.generate(
+                            rentDetailsList.length,
+                            (index) {
+                              final rentDetail = rentDetailsList[index];
+                              final rent = rentDetail['rent'] as CloudRent;
+                              final property =
+                                  rentDetail['property'] as CloudProperty;
+                              final profile =
+                                  rentDetail['profile'] as CloudProfile;
+                              final firstPaymentDate =
+                                  rentDetail['firstPaymentDate'];
+                              final lastAdvancePayment =
+                                  rentDetail['lastAdvancePayment'];
+                              final DateTime dueDate =
+                                  DateTime.parse(rent.dueDate);
+                              final monthsLeft =
+                                  dueDate.difference(DateTime.now()).inDays ~/
+                                      30;
 
-                            return DataRow(
-                              cells: [
-                                DataCell(Text((index + 1).toString())),
-                                DataCell(Text(property.propertyNumber)),
-                                DataCell(Text(property.floorNumber)),
-                                DataCell(Text(property.sizeInSquareMeters)),
-                                DataCell(Text(rent.rentAmount.toString())),
-                                DataCell(Text(rent.contract)),
-                                DataCell(Text(rent.dueDate)),
-                                DataCell(Text(monthsLeft.toString())),
-                                DataCell(Text(
-                                    '${profile.firstName} ${profile.lastName}')),
-                                DataCell(Text(firstPaymentDate)),
-                                DataCell(Text(lastAdvancePayment)),
-                              ],
-                              color: MaterialStateProperty.resolveWith<Color?>(
-                                (Set<MaterialState> states) {
-                                  if (monthsLeft == 1) {
-                                    return Colors.yellow[100];
+                              return DataRow(
+                                cells: [
+                                  DataCell(Text((index + 1).toString())),
+                                  DataCell(Text(property.propertyNumber)),
+                                  DataCell(Text(property.floorNumber)),
+                                  DataCell(Text(property.sizeInSquareMeters)),
+                                  DataCell(Text(rent.rentAmount.toString())),
+                                  DataCell(Text(rent.contract)),
+                                  DataCell(Text(
+                                      '${profile.firstName} ${profile.lastName}')),
+                                  DataCell(Text(firstPaymentDate)),
+                                  DataCell(Text(lastAdvancePayment)),
+                                  DataCell(Text(rent.dueDate)),
+                                  DataCell(Text(monthsLeft.toString())),
+                                ],
+                                onSelectChanged: (selected) {
+                                  if (selected == true) {
+                                    _showPaymentStatusDialog(
+                                      context,
+                                      rentDetail['paymentStatus'],
+                                    );
                                   }
-                                  return null; // Use default color
                                 },
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.print),
-                          label: const Text('Print'),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: ElevatedButton(
                           onPressed: () async {
-                            if (!context.mounted) return;
                             final companyName = await _fetchCompanyName();
-                            if (!context.mounted) return;
-                            await _generatePdf(context, rentDetailsList,
-                                companyName); // Pass context here
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('PDF saved successfully.')),
-                              );
-                            }
+                            await _generatePdf(
+                                context, rentDetailsList, companyName);
                           },
+                          child: const Text('Generate PDF'),
                         ),
                       ),
                     ],

@@ -5,6 +5,7 @@ import 'package:r_and_e_monitor/dashboard/admin/dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/employee/accountant_dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/dashboard/views/email_verify_view.dart';
+import 'package:r_and_e_monitor/dashboard/views/forgot_email_password_view.dart';
 import 'package:r_and_e_monitor/dashboard/views/log_in_view.dart';
 import 'package:r_and_e_monitor/dashboard/views/sign_up_view.dart';
 import 'package:r_and_e_monitor/landing_page.dart';
@@ -46,12 +47,38 @@ class MyApp extends StatelessWidget {
       title: 'Admin Signup Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.deepPurple, // Add header color
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.purple, // Button text color
+            textStyle: const TextStyle(fontSize: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.black, fontSize: 16),
+          bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
+          titleLarge: TextStyle(color: Colors.white),
+        ),
       ),
       home: const HomePage(),
       routes: {
         loginRoute: (context) => const LoginPage(),
+
         signUpRoute: (context) => const AdminSignUpView(),
+        forgotPasswordRoute: (context) => const ForgotPasswordView(),
         adminDashboardRoute: (context) => const AdminDashboard(),
         emailVerifyRoute: (context) => const VerifyEmailView(),
         landingPageRoute: (context) => const LandingPage(),
@@ -106,6 +133,8 @@ class HomePage extends StatelessWidget {
           return const VerifyEmailView();
         } else if (state is AuthStateLoggedOut) {
           return const LandingPage();
+        } else if (state is AuthStateForgotPassword) {
+          return const ForgotPasswordView();
         } else if (state is AuthStateRegistering) {
           return const AdminSignUpView();
         } else {

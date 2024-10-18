@@ -1,4 +1,3 @@
-//create_or_update_profile.dart
 import 'package:flutter/material.dart';
 import '../../../auth/auth_service.dart';
 import '../../../cloud/cloud_data_models.dart';
@@ -83,7 +82,11 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
 
     if (companyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a company.')),
+        const SnackBar(
+            content: Text(
+          'Please select a company.',
+          selectionColor: Colors.black,
+        )),
       );
       return;
     }
@@ -104,7 +107,6 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
     } else {
       await RentService().updateProfile(
         id: widget.profile!.id,
-        //companyId: companyId,
         companyName: companyName,
         firstName: firstName,
         lastName: lastName,
@@ -126,134 +128,159 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
       appBar: AppBar(
         title:
             Text(widget.profile == null ? 'Create Profile' : 'Update Profile'),
+        backgroundColor: Colors.purple,
+        elevation: 6.0,
       ),
-      body: FutureBuilder<List<CloudCompany>>(
-        future: _companiesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No companies found.'));
-          } else {
-            final companies = snapshot.data!;
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          image: DecorationImage(
+            //opacity: 1,
+            image: AssetImage(
+                'assets/bg/background_dashboard.jpg'), // Add background image here
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: FutureBuilder<List<CloudCompany>>(
+          future: _companiesFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No companies found.'));
+            } else {
+              final companies = snapshot.data!;
 
-            if (selectedCompany == null && companies.isNotEmpty) {
-              selectedCompany = companies.first;
-            }
+              if (selectedCompany == null && companies.isNotEmpty) {
+                selectedCompany = companies.first;
+              }
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  DropdownButtonFormField<CloudCompany>(
-                    value: selectedCompany,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedCompany = value;
-                      });
-                    },
-                    items: companies.map((company) {
-                      return DropdownMenuItem<CloudCompany>(
-                        value: company,
-                        child: Text(company.companyName),
-                      );
-                    }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'Select Company'),
-                  ),
-                  const SizedBox(height: 16.0),
-                  Card(
-                    elevation: 4.0,
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _companyNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Company Name',
-                              border: OutlineInputBorder(),
-                            ),
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<CloudCompany>(
+                      value: selectedCompany,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCompany = value;
+                        });
+                      },
+                      items: companies.map((company) {
+                        return DropdownMenuItem<CloudCompany>(
+                          value: company,
+                          child: Text(
+                            company.companyName,
+                            selectionColor: Colors.black,
                           ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _firstNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'First Name',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Last Name',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _tinController,
-                            decoration: const InputDecoration(
-                              labelText: 'TIN',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _phoneNumberController,
-                            decoration: const InputDecoration(
-                              labelText: 'Phone Number',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _addressController,
-                            decoration: const InputDecoration(
-                              labelText: 'Address',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 16.0),
-                          TextField(
-                            controller: _contractInfoController,
-                            decoration: const InputDecoration(
-                              labelText: 'Contract Info',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          const SizedBox(height: 24.0),
-                          ElevatedButton(
-                            onPressed: _saveProfile,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16.0,
-                                horizontal: 32.0,
-                              ),
-                            ),
-                            child: const Text('Save'),
-                          ),
-                        ],
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(
+                        labelText: 'Select Company',
+                        labelStyle: const TextStyle(color: Colors.black),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        filled: true,
+                        fillColor: Colors.black.withOpacity(0.1),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
+                    const SizedBox(height: 16.0),
+                    Card(
+                      elevation: 0,
+                      color: Colors.transparent,
+                      shadowColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.0),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            _buildTextField(
+                              controller: _companyNameController,
+                              label: 'Company Name',
+                            ),
+                            _buildTextField(
+                              controller: _firstNameController,
+                              label: 'First Name',
+                            ),
+                            _buildTextField(
+                              controller: _lastNameController,
+                              label: 'Last Name',
+                            ),
+                            _buildTextField(
+                              controller: _tinController,
+                              label: 'TIN',
+                            ),
+                            _buildTextField(
+                              controller: _emailController,
+                              label: 'Email',
+                            ),
+                            _buildTextField(
+                              controller: _phoneNumberController,
+                              label: 'Phone Number',
+                            ),
+                            _buildTextField(
+                              controller: _addressController,
+                              label: 'Address',
+                            ),
+                            _buildTextField(
+                              controller: _contractInfoController,
+                              label: 'Contract Info',
+                            ),
+                            const SizedBox(height: 24.0),
+                            ElevatedButton(
+                              onPressed: _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16.0,
+                                  horizontal: 32.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 5.0,
+                              ),
+                              child: const Text(
+                                'Save',
+                                style: TextStyle(fontSize: 18),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.black),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.black.withOpacity(0.1),
+        ),
       ),
     );
   }

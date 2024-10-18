@@ -1,4 +1,4 @@
-// profile_view.dart
+//profile_view.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/create_or_update_profile.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_list_view.dart';
@@ -28,70 +28,82 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Profiles"), actions: [
-        IconButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed(createOrUpdateProfileRoute);
-          },
-          icon: const Icon(Icons.add),
+      appBar: AppBar(
+        title: const Text("Profiles"),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(createOrUpdateProfileRoute);
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/bg/background_dashboard.jpg'), // Use your background image asset
+            fit: BoxFit.cover,
+          ),
         ),
-      ]),
-      body: StreamBuilder(
-        stream: _rentService.allProfiles(creatorId: userId),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-            case ConnectionState.active:
-              if (snapshot.hasData) {
-                final allProfiles = snapshot.data as Iterable<CloudProfile>;
-                final profilesByCompanyId =
-                    _groupProfilesByCompanyId(allProfiles);
+        child: StreamBuilder(
+          stream: _rentService.allProfiles(creatorId: userId),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.waiting:
+              case ConnectionState.active:
+                if (snapshot.hasData) {
+                  final allProfiles = snapshot.data as Iterable<CloudProfile>;
+                  final profilesByCompanyId =
+                      _groupProfilesByCompanyId(allProfiles);
 
-                return FutureBuilder<Map<String, String>>(
-                  future: _getCompanyNames(profilesByCompanyId.keys.toList()),
-                  builder: (context, companyNamesSnapshot) {
-                    if (companyNamesSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (companyNamesSnapshot.hasData) {
-                      final companyNames = companyNamesSnapshot.data!;
-                      return ProfilesListView(
-                        groupedProfiles: profilesByCompanyId,
-                        companyNames: companyNames,
-                        onDeleteProfile: (profile) async {
-                          await _rentService.deleteProfile(id: profile.id);
-                        },
-                        onTap: (profile) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ReadProfile(profile: profile),
-                            ),
-                          );
-                        },
-                        onLongPress: (profile) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  CreateOrUpdateProfile(profile: profile),
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(
-                          child: Text('Error loading company names'));
-                    }
-                  },
-                );
-              } else {
-                return const Center(child: Text('No profiles found'));
-              }
-            default:
-              return const Center(child: Text('Error loading profiles'));
-          }
-        },
+                  return FutureBuilder<Map<String, String>>(
+                    future: _getCompanyNames(profilesByCompanyId.keys.toList()),
+                    builder: (context, companyNamesSnapshot) {
+                      if (companyNamesSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (companyNamesSnapshot.hasData) {
+                        final companyNames = companyNamesSnapshot.data!;
+                        return ProfilesListView(
+                          groupedProfiles: profilesByCompanyId,
+                          companyNames: companyNames,
+                          onDeleteProfile: (profile) async {
+                            await _rentService.deleteProfile(id: profile.id);
+                          },
+                          onTap: (profile) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ReadProfile(profile: profile),
+                              ),
+                            );
+                          },
+                          onLongPress: (profile) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CreateOrUpdateProfile(profile: profile),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        return const Center(
+                            child: Text('Error loading company names'));
+                      }
+                    },
+                  );
+                } else {
+                  return const Center(child: Text('No profiles found'));
+                }
+              default:
+                return const Center(child: Text('Error loading profiles'));
+            }
+          },
+        ),
       ),
     );
   }

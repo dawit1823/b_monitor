@@ -1,3 +1,4 @@
+//create_or_update_financial_management.dart
 import 'package:flutter/material.dart';
 import '../../auth/auth_service.dart';
 import '../cloud_data_models.dart';
@@ -115,6 +116,22 @@ class _CreateOrUpdateFinancialManagementState
     }
   }
 
+  Future<void> _pickTransactionDate(BuildContext context) async {
+    DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _txnDateController.text =
+            "${pickedDate.toLocal()}".split(' ')[0]; // Format as YYYY-MM-DD
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -194,8 +211,14 @@ class _CreateOrUpdateFinancialManagementState
               ),
               TextFormField(
                 controller: _txnDateController,
-                decoration:
-                    const InputDecoration(labelText: 'Transaction Date'),
+                readOnly:
+                    true, // Make it read-only so users cannot manually enter a date
+                decoration: const InputDecoration(
+                  labelText: 'Transaction Date',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                onTap: () =>
+                    _pickTransactionDate(context), // Show date picker on tap
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter Transaction Date';

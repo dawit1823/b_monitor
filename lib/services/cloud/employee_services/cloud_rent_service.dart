@@ -216,6 +216,19 @@ class RentService {
     });
   }
 
+  Stream<Iterable<CloudFinancialManagement>>
+      getFinancialReportsByCreatorAndCompany({
+    required String creatorId,
+    required String companyId,
+  }) {
+    return financialManagement
+        .where('creatorId', isEqualTo: creatorId)
+        .where('companyId', isEqualTo: companyId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => CloudFinancialManagement.fromFirestore(doc)));
+  }
+
   Future<List<CloudFinancialManagement>> getFinancialReportsByCreatorId(
       {required String creatorId}) async {
     final querySnapshot = await financialManagement
@@ -275,6 +288,15 @@ class RentService {
         await rents.where('profileId', isEqualTo: profileId).get();
     return querySnapshot.docs
         .map((doc) => CloudRent.fromFirestore(doc))
+        .toList();
+  }
+
+  Future<List<CloudProfile>> getProfilesByCompanyId(
+      {required String companyId}) async {
+    final querySnapshot =
+        await profiles.where('companyId', isEqualTo: companyId).get();
+    return querySnapshot.docs
+        .map((doc) => CloudProfile.fromFirestore(doc))
         .toList();
   }
 
@@ -671,6 +693,7 @@ class RentService {
   Future<CloudCompany> updateCompany({
     required String id,
     required String companyName,
+    required String companyOwner,
     required String companyAddress,
     required String companyEmail,
     required String companyPhone,
@@ -680,9 +703,10 @@ class RentService {
       documentId: id,
       data: {
         'companyName': companyName,
+        'companyPhone': companyPhone,
         'companyAddress': companyAddress,
         'companyEmail': companyEmail,
-        'companyPhone': companyPhone,
+        'companyOwner': companyOwner,
       },
     );
     return await getCompany(id: id);

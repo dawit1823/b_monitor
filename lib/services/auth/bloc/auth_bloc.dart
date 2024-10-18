@@ -13,6 +13,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthEventSendEmailVerification>(_onSendEmailVerification);
     on<AuthEventRegister>(_onRegister);
     on<AuthEventLogIn>(_onLogIn);
+    on<AuthEventForgotPassword>(_authEventForgotPassword);
     on<AuthEventLogOut>(_onLogOut);
   }
 
@@ -28,6 +29,43 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } else {
       emit(AuthStateLoggedIn(user: user, isLoading: false));
     }
+  }
+
+  Future<void> _authEventForgotPassword(
+      AuthEventForgotPassword event, Emitter<AuthState> emit) async {
+    emit(const AuthStateForgotPassword(
+      exception: null,
+      hasSentEmail: false,
+      isLoading: false,
+    ));
+    final email = event.email;
+    if (email == null) {
+      return;
+    }
+
+    // user wants to actually send a forgot-password email
+    emit(const AuthStateForgotPassword(
+      exception: null,
+      hasSentEmail: false,
+      isLoading: true,
+    ));
+
+    bool didSendEmail;
+    Exception? exception;
+    try {
+      await provider.sendPasswordReset(toEmail: email);
+      didSendEmail = true;
+      exception = null;
+    } on Exception catch (e) {
+      didSendEmail = false;
+      exception = e;
+    }
+
+    emit(AuthStateForgotPassword(
+      exception: exception,
+      hasSentEmail: didSendEmail,
+      isLoading: false,
+    ));
   }
 
   Future<void> _onSendEmailVerification(

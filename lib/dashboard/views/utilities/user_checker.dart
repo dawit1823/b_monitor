@@ -26,6 +26,7 @@ class _UserCheckerState extends State<UserChecker> {
   @override
   void initState() {
     super.initState();
+
     final User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       context.read<UserBloc>().add(UserEventCheck(user.email!));
@@ -37,7 +38,7 @@ class _UserCheckerState extends State<UserChecker> {
         _navigateToDashboard(state.employee);
       } else if (state is UserStateNotFound) {
         _navigateToAdminDashboard();
-      } else if (state is UserStateFailure) {
+      } else if (state is UserStateFailure && mounted) {
         Navigator.pushNamed(
           context,
           landingPageRoute,

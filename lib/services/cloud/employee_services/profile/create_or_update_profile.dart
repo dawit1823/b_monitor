@@ -98,6 +98,7 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 66, 143, 107),
         title:
             Text(widget.profile == null ? 'Create Profile' : 'Update Profile'),
       ),
@@ -150,9 +151,18 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitForm,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  backgroundColor: Color.fromARGB(255, 66, 143, 107),
+                ),
                 child: _isSubmitting
                     ? const CircularProgressIndicator()
-                    : const Text('Save'),
+                    : const Text(
+                        'Save',
+                      ),
               ),
             ],
           ),

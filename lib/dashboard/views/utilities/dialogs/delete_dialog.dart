@@ -5,7 +5,7 @@ import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/generic_dialog
 Future<bool> showDeleteDialog(BuildContext context) {
   return showGenericDialog(
     context: context,
-    title: 'Delete Note',
+    title: 'Delete',
     content: 'Are you sure you want to delete?',
     optionBuilder: () => {
       'cancel': false,

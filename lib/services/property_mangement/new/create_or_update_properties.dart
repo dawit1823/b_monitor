@@ -1,4 +1,3 @@
-// create_or_update_properties.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import '../../auth/auth_service.dart';
@@ -149,83 +148,108 @@ class _NewPropertyViewState extends State<NewPropertyView> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView(
-                children: [
-                  if (_errorMessage != null)
-                    Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/bg/background_dashboard.jpg'), // Add your background image here
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ListView(
+                  children: [
+                    if (_errorMessage != null)
+                      Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    DropdownButtonFormField<CloudCompany>(
+                      value: selectedCompany,
+                      onChanged: (CloudCompany? newCompany) {
+                        setState(() {
+                          selectedCompany = newCompany;
+                        });
+                      },
+                      items: _companies
+                          .map((company) => DropdownMenuItem(
+                                value: company,
+                                child: Text(company.companyName),
+                              ))
+                          .toList(),
+                      decoration: InputDecoration(
+                        labelText: 'Company',
+                        filled: true,
+                        fillColor: Colors.black.withOpacity(0.1),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                  DropdownButtonFormField<CloudCompany>(
-                    value: selectedCompany,
-                    onChanged: (CloudCompany? newCompany) {
-                      setState(() {
-                        selectedCompany = newCompany;
-                      });
-                    },
-                    items: _companies
-                        .map((company) => DropdownMenuItem(
-                              value: company,
-                              child: Text(company.companyName),
-                            ))
-                        .toList(),
-                    decoration: const InputDecoration(
-                      labelText: 'Company',
+                    const SizedBox(height: 10),
+                    _buildTextField(_propertyTypeController, 'Property Type'),
+                    const SizedBox(height: 10),
+                    _buildTextField(_numberOfFloorsController, 'Floor Number',
+                        isNumeric: true),
+                    const SizedBox(height: 10),
+                    _buildTextField(
+                        _propertyNumberController, 'Property Number'),
+                    const SizedBox(height: 10),
+                    _buildTextField(_sizeController, 'Area (sqm)',
+                        isNumeric: true),
+                    const SizedBox(height: 10),
+                    _buildTextField(_priceController, 'Price per Month',
+                        isNumeric: true),
+                    const SizedBox(height: 10),
+                    _buildTextField(_descriptionController, 'Description',
+                        maxLines: 3),
+                    const SizedBox(height: 10),
+                    SwitchListTile(
+                      title: const Text('Is Rented'),
+                      value: _isRented,
+                      onChanged: (bool value) {
+                        setState(() => _isRented = value);
+                      },
                     ),
-                  ),
-                  TextField(
-                    controller: _propertyTypeController,
-                    decoration:
-                        const InputDecoration(labelText: 'Property Type'),
-                  ),
-                  TextField(
-                    controller: _numberOfFloorsController,
-                    decoration:
-                        const InputDecoration(labelText: 'Number of Floors'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: _propertyNumberController,
-                    decoration:
-                        const InputDecoration(labelText: 'Property Number'),
-                  ),
-                  TextField(
-                    controller: _sizeController,
-                    decoration: const InputDecoration(labelText: 'Size (sqm)'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: _priceController,
-                    decoration:
-                        const InputDecoration(labelText: 'Price per Month'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    maxLines: 3,
-                  ),
-                  SwitchListTile(
-                    title: const Text('Is Rented'),
-                    value: _isRented,
-                    onChanged: (bool value) {
-                      setState(() => _isRented = value);
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _saveProperty,
-                    child: Text(widget.property != null
-                        ? 'Update Property'
-                        : 'Create Property'),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _saveProperty,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(widget.property != null
+                          ? 'Update Property'
+                          : 'Create Property'),
+                    ),
+                  ],
+                ),
               ),
-            ),
+      ),
+    );
+  }
+
+  // Helper method to build text fields with consistent styling
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool isNumeric = false, int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      maxLines: maxLines,
     );
   }
 }

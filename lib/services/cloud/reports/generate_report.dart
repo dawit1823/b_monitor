@@ -1,111 +1,121 @@
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart';
-import 'package:printing/printing.dart';
+import 'dart:typed_data';
+import 'package:flutter/cupertino.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 
-Future<void> generateAndPrintReport(
+Future<void> generateAndSaveReport(
   CloudRent rent,
   CloudProfile profile,
   CloudReports report,
-  CloudCompany company, // Add companyName parameter
+  CloudCompany company,
 ) async {
-  final pdf = pw.Document();
+  // Create a PDF document.
+  final PdfDocument document = PdfDocument();
 
-  pdf.addPage(
-    pw.Page(
-      pageFormat: PdfPageFormat.a4,
-      build: (pw.Context context) {
-        return pw.Padding(
-          padding: const pw.EdgeInsets.all(32.0),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    company.companyName, // Use the passed companyName
-                    style: pw.TextStyle(
-                      fontBold: pw.Font.timesBold(),
-                      fontSize: 20,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    report.reportDate,
-                    style: const pw.TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-              pw.SizedBox(height: 16),
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  profile.companyName.isNotEmpty
-                      ? profile.companyName
-                      : '${profile.firstName} ${profile.lastName}',
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 32),
-              pw.Text(
-                'To: ${profile.firstName} ${profile.lastName}',
-                style: const pw.TextStyle(fontSize: 12),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Align(
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                  report.reportTitle,
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                    decoration: pw.TextDecoration.underline,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Text(
-                report.reportContent,
-                style: const pw.TextStyle(fontSize: 14),
-                textAlign: pw.TextAlign.justify,
-              ),
-              pw.SizedBox(height: 32),
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  'CC: ${report.carbonCopy}',
-                  style: const pw.TextStyle(fontSize: 12),
-                ),
-              ),
-              pw.SizedBox(height: 32),
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Text(
-                  'NBR Regards\nManagement',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Divider(),
-              pw.Text(
-                'Address: ${profile.address}',
-                style: const pw.TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-        );
-      },
-    ),
+  // Add a page and draw text.
+  final PdfPage page = document.pages.add();
+  final PdfGraphics graphics = page.graphics;
+  final Size pageSize = page.getClientSize();
+
+  // Drawing text on the PDF page.
+  graphics.drawString(
+    company.companyName, // Use the passed companyName
+    PdfStandardFont(PdfFontFamily.timesRoman, 20, style: PdfFontStyle.bold),
+    bounds: Rect.fromLTWH(0, 0, pageSize.width, 20),
   );
 
-  await Printing.layoutPdf(
-    onLayout: (PdfPageFormat format) async => pdf.save(),
+  graphics.drawString(
+    report.reportDate,
+    PdfStandardFont(PdfFontFamily.timesRoman, 12),
+    bounds: Rect.fromLTWH(pageSize.width - 100, 0, 100, 20),
+    format: PdfStringFormat(alignment: PdfTextAlignment.right),
   );
+
+  // Profile information
+  graphics.drawString(
+    profile.companyName.isNotEmpty
+        ? profile.companyName
+        : '${profile.firstName} ${profile.lastName}',
+    PdfStandardFont(PdfFontFamily.timesRoman, 16, style: PdfFontStyle.bold),
+    bounds: Rect.fromLTWH(0, 40, pageSize.width, 16),
+    format: PdfStringFormat(alignment: PdfTextAlignment.right),
+  );
+
+  graphics.drawString(
+    'To: ${profile.firstName} ${profile.lastName}',
+    PdfStandardFont(PdfFontFamily.timesRoman, 12),
+    bounds: Rect.fromLTWH(0, 80, pageSize.width, 16),
+  );
+
+  graphics.drawString(
+    report.reportTitle,
+    PdfStandardFont(PdfFontFamily.timesRoman, 24, style: PdfFontStyle.bold),
+    bounds: Rect.fromLTWH(0, 120, pageSize.width, 24),
+    format: PdfStringFormat(alignment: PdfTextAlignment.center),
+  );
+
+  graphics.drawString(
+    report.reportContent,
+    PdfStandardFont(PdfFontFamily.timesRoman, 14),
+    bounds: Rect.fromLTWH(0, 160, pageSize.width, pageSize.height - 160),
+    format: PdfStringFormat(alignment: PdfTextAlignment.justify),
+  );
+
+  graphics.drawString(
+    'CC: ${report.carbonCopy}',
+    PdfStandardFont(PdfFontFamily.timesRoman, 12),
+    bounds: Rect.fromLTWH(0, pageSize.height - 100, pageSize.width, 16),
+    format: PdfStringFormat(alignment: PdfTextAlignment.right),
+  );
+
+  graphics.drawString(
+    'NBR Regards\nManagement',
+    PdfStandardFont(PdfFontFamily.timesRoman, 12, style: PdfFontStyle.bold),
+    bounds: Rect.fromLTWH(0, pageSize.height - 60, pageSize.width, 20),
+    format: PdfStringFormat(alignment: PdfTextAlignment.right),
+  );
+
+  graphics.drawString(
+    'Address: ${profile.address}',
+    PdfStandardFont(PdfFontFamily.timesRoman, 12),
+    bounds: Rect.fromLTWH(0, pageSize.height - 40, pageSize.width, 16),
+  );
+
+  // Save the document to a file.
+  final List<int> bytes = document.saveSync();
+  document.dispose();
+
+  // Convert the bytes to Uint8List for saving.
+  final Uint8List byteList = Uint8List.fromList(bytes);
+
+  // Open file selector to save the PDF file.
+  final String? path = await getSavePath(
+    suggestedName: 'report.pdf',
+    confirmButtonText: 'Save',
+  );
+
+  if (path != null) {
+    final XFile file = XFile.fromData(byteList,
+        name: 'report.pdf', mimeType: 'application/pdf');
+    await file.saveTo(path);
+  }
+}
+
+// Function to open save dialog
+Future<String?> getSavePath(
+    {required String suggestedName, required String confirmButtonText}) async {
+  final XFile? file = await getSavePathForXFile(
+      suggestedName: suggestedName, confirmButtonText: confirmButtonText);
+  return file?.path;
+}
+
+// Helper function to get the file path
+Future<XFile?> getSavePathForXFile(
+    {required String suggestedName, required String confirmButtonText}) async {
+  final XFile? file = await getSavePathForXFile(
+    suggestedName: suggestedName,
+    confirmButtonText: confirmButtonText,
+  );
+  return file;
 }

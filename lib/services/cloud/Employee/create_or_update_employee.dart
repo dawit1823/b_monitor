@@ -98,11 +98,11 @@ class _CreateOrUpdateEmployeeState extends State<CreateOrUpdateEmployee> {
               TextFormField(
                 controller: _contractDateController,
                 decoration: const InputDecoration(
-                  labelText: 'Contract Date',
+                  labelText: 'Date Started',
                   hintText: 'YYYY-MM-DD',
                 ),
                 validator: (value) =>
-                    value!.isEmpty ? 'Enter contract date' : null,
+                    value!.isEmpty ? 'Enter date started' : null,
                 onSaved: (value) => _contractDate = value!,
                 onTap: () async {
                   FocusScope.of(context).requestFocus(FocusNode());

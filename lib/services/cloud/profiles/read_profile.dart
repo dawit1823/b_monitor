@@ -12,58 +12,76 @@ class ReadProfile extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Details'),
-        backgroundColor: Colors.teal,
+        backgroundColor: Colors.purple,
+        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 6.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/bg/background_dashboard.jpg'), // Background image
+            fit: BoxFit.cover,
           ),
-          margin: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildProfileHeader(context),
-                const Divider(
-                  color: Colors.grey,
-                  height: 40,
-                  thickness: 1,
-                ),
-                _buildProfileDetail(
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(0),
+          child: Card(
+            elevation: 8.0,
+            color: Colors.white.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildProfileHeader(context),
+                  const Divider(
+                    color: Colors.black,
+                    height: 40,
+                    thickness: 1,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.business,
                     label: 'Company Name',
-                    value: profile.companyName),
-                _buildProfileDetail(
+                    value: profile.companyName,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.person,
                     label: 'Full Name',
-                    value: '${profile.firstName} ${profile.lastName}'),
-                _buildProfileDetail(
+                    value: '${profile.firstName} ${profile.lastName}',
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.confirmation_number,
                     label: 'TIN',
-                    value: profile.tin),
-                _buildProfileDetail(
+                    value: profile.tin,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.email,
                     label: 'Email',
                     value: profile.email,
-                    isEmail: true),
-                _buildProfileDetail(
+                    isEmail: true,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.phone,
                     label: 'Phone Number',
                     value: profile.phoneNumber,
-                    isPhoneNumber: true),
-                _buildProfileDetail(
+                    isPhoneNumber: true,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.location_on,
                     label: 'Address',
-                    value: profile.address),
-                _buildProfileDetail(
+                    value: profile.address,
+                  ),
+                  _buildProfileDetail(
                     icon: Icons.file_copy,
                     label: 'Contract Info',
-                    value: profile.contractInfo),
-              ],
+                    value: profile.contractInfo,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -76,7 +94,7 @@ class ReadProfile extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 40,
-          backgroundColor: Colors.teal,
+          backgroundColor: Colors.purple,
           child: Text(
             profile.firstName[0] + profile.lastName[0],
             style: const TextStyle(
@@ -92,16 +110,17 @@ class ReadProfile extends StatelessWidget {
           children: [
             Text(
               '${profile.firstName} ${profile.lastName}',
+              selectionColor: Colors.black,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
               profile.companyName,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.grey[600],
+                    color: Colors.black,
                   ),
             ),
           ],
@@ -122,7 +141,7 @@ class ReadProfile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.teal),
+          Icon(icon, color: Colors.black),
           const SizedBox(width: 20),
           Expanded(
             child: GestureDetector(
@@ -161,8 +180,9 @@ class ReadProfile extends StatelessWidget {
                     value,
                     style: TextStyle(
                       fontSize: 18,
-                      color:
-                          isEmail || isPhoneNumber ? Colors.teal : Colors.black,
+                      color: isEmail || isPhoneNumber
+                          ? const Color.fromARGB(255, 0, 0, 0)
+                          : Colors.black,
                       decoration: isEmail || isPhoneNumber
                           ? TextDecoration.underline
                           : TextDecoration.none,

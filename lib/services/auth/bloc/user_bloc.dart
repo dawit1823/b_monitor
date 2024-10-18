@@ -54,7 +54,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
           .doc(userCredential.user!.uid)
           .set({
         'email': event.email,
-        'role': event.role,
+        'role': event.role, // Include the role
       });
 
       emit(const UserStateRegistered(isLoading: false));

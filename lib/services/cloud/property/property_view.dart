@@ -1,3 +1,4 @@
+//property_view.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
@@ -42,72 +43,91 @@ class _PropertyViewState extends State<PropertyView> {
           ),
         ],
       ),
-      body: StreamBuilder(
-        stream: _propertyService.allProperties(creatorId: userId),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.waiting:
-              return const Center(child: CircularProgressIndicator());
-            case ConnectionState.active:
-              if (snapshot.hasData) {
-                final allProperties = snapshot.data!;
-                final propertiesByCompanyId =
-                    _groupPropertiesByCompanyId(allProperties);
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/bg/background_dashboard.jpg', // Replace with your image path
+              fit: BoxFit.cover,
+            ),
+          ),
+          StreamBuilder(
+            stream: _propertyService.allProperties(creatorId: userId),
+            builder: (context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.waiting:
+                  return const Center(child: CircularProgressIndicator());
+                case ConnectionState.active:
+                  if (snapshot.hasData) {
+                    final allProperties = snapshot.data!;
+                    final propertiesByCompanyId =
+                        _groupPropertiesByCompanyId(allProperties);
 
-                return FutureBuilder<Map<String, String>>(
-                  future: _getCompanyNames(propertiesByCompanyId.keys.toList()),
-                  builder: (context, companyNamesSnapshot) {
-                    if (companyNamesSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (companyNamesSnapshot.hasData) {
-                      final companyNames = companyNamesSnapshot.data!;
-                      return ListView.builder(
-                        itemCount: propertiesByCompanyId.length,
-                        itemBuilder: (context, companyIndex) {
-                          final companyId = propertiesByCompanyId.keys
-                              .elementAt(companyIndex);
-                          final propertiesByRentalStatus =
-                              propertiesByCompanyId[companyId]!;
-                          final companyName =
-                              companyNames[companyId] ?? 'Unknown';
+                    return FutureBuilder<Map<String, String>>(
+                      future:
+                          _getCompanyNames(propertiesByCompanyId.keys.toList()),
+                      builder: (context, companyNamesSnapshot) {
+                        if (companyNamesSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        if (companyNamesSnapshot.hasData) {
+                          final companyNames = companyNamesSnapshot.data!;
+                          return ListView.builder(
+                            itemCount: propertiesByCompanyId.length,
+                            itemBuilder: (context, companyIndex) {
+                              final companyId = propertiesByCompanyId.keys
+                                  .elementAt(companyIndex);
+                              final propertiesByRentalStatus =
+                                  propertiesByCompanyId[companyId]!;
+                              final companyName =
+                                  companyNames[companyId] ?? 'Unknown';
 
-                          return Card(
-                            elevation: 4.0,
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 10.0, horizontal: 16.0),
-                            child: ExpansionTile(
-                              title: Text(
-                                'Company: $companyName',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              children: [
-                                for (var rentalStatus in [true, false])
-                                  _buildRentalStatusSection(
-                                    rentalStatus,
-                                    propertiesByRentalStatus[rentalStatus] ??
-                                        [],
-                                    companyName,
+                              return Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                ),
+                                color: Colors.transparent,
+                                elevation: 6.0,
+                                margin: const EdgeInsets.symmetric(
+                                    vertical: 10.0, horizontal: 16.0),
+                                child: ExpansionTile(
+                                  title: Text(
+                                    'Company: $companyName',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18.0,
+                                    ),
                                   ),
-                              ],
-                            ),
+                                  children: [
+                                    for (var rentalStatus in [true, false])
+                                      _buildRentalStatusSection(
+                                        rentalStatus,
+                                        propertiesByRentalStatus[
+                                                rentalStatus] ??
+                                            [],
+                                        companyName,
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
                           );
-                        },
-                      );
-                    }
-                    return const Center(
-                        child: Text('Error loading company names'));
-                  },
-                );
-              } else {
-                return const Center(child: Text('No properties found'));
+                        }
+                        return const Center(
+                            child: Text('Error loading company names'));
+                      },
+                    );
+                  } else {
+                    return const Center(child: Text('No properties found'));
+                  }
+                default:
+                  return const Center(child: Text('Error loading properties'));
               }
-            default:
-              return const Center(child: Text('Error loading properties'));
-          }
-        },
+            },
+          ),
+        ],
       ),
     );
   }
@@ -136,14 +156,23 @@ class _PropertyViewState extends State<PropertyView> {
   Widget _buildRentalStatusSection(
       bool rentalStatus, List<CloudProperty> properties, String companyName) {
     return Card(
-      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      color: const Color.fromARGB(255, 224, 229, 235),
+      elevation: 4.0,
       margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 16.0),
       child: ExpansionTile(
         title: Text(
           rentalStatus ? 'Rented Properties' : 'Free Properties',
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: rentalStatus ? Colors.green : Colors.red),
+            fontWeight: FontWeight.bold,
+            color: rentalStatus ? Colors.green : Colors.red,
+          ),
+        ),
+        leading: Icon(
+          rentalStatus ? Icons.check_circle_outline : Icons.highlight_off,
+          color: rentalStatus ? Colors.green : Colors.red,
         ),
         children: properties.map((property) {
           return PropertyListTile(

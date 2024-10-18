@@ -1,3 +1,4 @@
+//create_or_update_rents.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -227,167 +228,184 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
       appBar: AppBar(
         title: Text(widget.rent == null ? 'Create Rent' : 'Update Rent'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              DropdownButtonFormField<CloudProfile>(
-                value: selectedProfile,
-                onChanged: (value) {
-                  setState(() {
-                    selectedProfile = value!;
-                    _filterProperties();
-                    selectedProperty = filteredProperties.isNotEmpty
-                        ? filteredProperties.first
-                        : selectedProperty;
-                  });
-                },
-                items: widget.profiles.map((profile) {
-                  return DropdownMenuItem<CloudProfile>(
-                    value: profile,
-                    child: Text(profile.companyName),
-                  );
-                }).toList(),
-                decoration: const InputDecoration(labelText: 'Select Profile'),
+      body: Stack(
+        children: [
+          // Background image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(
+                    'assets/bg/background_dashboard.jpg'), // Replace with your image asset
+                fit: BoxFit.cover,
               ),
-              DropdownButtonFormField<CloudProperty>(
-                value: selectedProperty,
-                onChanged: (value) {
-                  setState(() {
-                    selectedProperty = value!;
-                  });
-                },
-                items: filteredProperties.map((property) {
-                  return DropdownMenuItem<CloudProperty>(
-                    value: property,
-                    child: Text(property.propertyNumber),
-                  );
-                }).toList(),
-                decoration: const InputDecoration(labelText: 'Select Property'),
-              ),
-              TextFormField(
-                controller: startDateController,
-                readOnly: true,
-                decoration: const InputDecoration(labelText: 'Start Date'),
-                onTap: () => _selectDate(context, startDateController),
-              ),
-              TextFormField(
-                controller: endDateController,
-                readOnly: true,
-                decoration: const InputDecoration(labelText: 'End Date'),
-                onTap: () => _selectDate(context, endDateController),
-              ),
-              TextFormField(
-                controller: rentAmountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Rent Amount'),
-              ),
-              TextFormField(
-                controller: dueDateController,
-                readOnly: true,
-                decoration: const InputDecoration(labelText: 'Due Date'),
-                onTap: () => _selectDate(context, dueDateController),
-              ),
-              DropdownButtonFormField<String>(
-                value: selectedEndContractState,
-                onChanged: (value) {
-                  setState(() {
-                    selectedEndContractState = value!;
-                    _updatePropertyIsRented();
-                  });
-                },
-                items: [
-                  'Contract_Active',
-                  'Contract_Prolonged',
-                  'Contract_Ended'
-                ].map((status) {
-                  return DropdownMenuItem<String>(
-                    value: status,
-                    child: Text(status),
-                  );
-                }).toList(),
-                decoration: const InputDecoration(labelText: 'End Contract'),
-              ),
-              const SizedBox(height: 20),
-              ...payments.asMap().entries.map((entry) {
-                final index = entry.key;
-                final payment = entry.value;
-                return Column(
-                  key: ValueKey(index),
-                  children: [
-                    const Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Payment ${index + 1}',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          onPressed: () => _removePayment(index),
-                          icon: const Icon(Icons.remove_circle_outline),
-                          color: Colors.red,
-                        ),
-                      ],
-                    ),
-                    TextFormField(
-                      controller: payment['paymentCount'],
-                      decoration:
-                          const InputDecoration(labelText: 'Payment Count'),
-                    ),
-                    TextFormField(
-                      controller: payment['advancePayment'],
-                      decoration:
-                          const InputDecoration(labelText: 'Advance Payment'),
-                    ),
-                    TextFormField(
-                      controller: payment['paymentType'],
-                      decoration:
-                          const InputDecoration(labelText: 'Payment Type'),
-                    ),
-                    TextFormField(
-                      controller: payment['paymentDate'],
-                      readOnly: true,
-                      decoration:
-                          const InputDecoration(labelText: 'Payment Date'),
-                      onTap: () =>
-                          _selectDate(context, payment['paymentDate']!),
-                    ),
-                    TextFormField(
-                      controller: payment['depositedOn'],
-                      readOnly: true,
-                      decoration:
-                          const InputDecoration(labelText: 'Deposited On'),
-                      onTap: () =>
-                          _selectDate(context, payment['depositedOn']!),
-                    ),
-                    TextFormField(
-                      controller: payment['paymentAmount'],
-                      keyboardType: TextInputType.number,
-                      decoration:
-                          const InputDecoration(labelText: 'Payment Amount'),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                );
-              }),
-              TextButton.icon(
-                onPressed: _addPayment,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Payment'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _saveRent,
-                child:
-                    Text(widget.rent == null ? 'Create Rent' : 'Update Rent'),
-              ),
-            ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  DropdownButtonFormField<CloudProfile>(
+                    value: selectedProfile,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedProfile = value!;
+                        _filterProperties();
+                        selectedProperty = filteredProperties.isNotEmpty
+                            ? filteredProperties.first
+                            : selectedProperty;
+                      });
+                    },
+                    items: widget.profiles.map((profile) {
+                      return DropdownMenuItem<CloudProfile>(
+                        value: profile,
+                        child: Text(profile.companyName),
+                      );
+                    }).toList(),
+                    decoration:
+                        const InputDecoration(labelText: 'Select Profile'),
+                  ),
+                  DropdownButtonFormField<CloudProperty>(
+                    value: selectedProperty,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedProperty = value!;
+                      });
+                    },
+                    items: filteredProperties.map((property) {
+                      return DropdownMenuItem<CloudProperty>(
+                        value: property,
+                        child: Text(property.propertyNumber),
+                      );
+                    }).toList(),
+                    decoration:
+                        const InputDecoration(labelText: 'Select Property'),
+                  ),
+                  TextFormField(
+                    controller: startDateController,
+                    readOnly: true,
+                    decoration: const InputDecoration(labelText: 'Start Date'),
+                    onTap: () => _selectDate(context, startDateController),
+                  ),
+                  TextFormField(
+                    controller: endDateController,
+                    readOnly: true,
+                    decoration: const InputDecoration(labelText: 'End Date'),
+                    onTap: () => _selectDate(context, endDateController),
+                  ),
+                  TextFormField(
+                    controller: rentAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Rent Amount'),
+                  ),
+                  TextFormField(
+                    controller: dueDateController,
+                    readOnly: true,
+                    decoration: const InputDecoration(labelText: 'Due Date'),
+                    onTap: () => _selectDate(context, dueDateController),
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: selectedEndContractState,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedEndContractState = value!;
+                        _updatePropertyIsRented();
+                      });
+                    },
+                    items: [
+                      'Contract_Active',
+                      'Contract_Prolonged',
+                      'Contract_Ended'
+                    ].map((status) {
+                      return DropdownMenuItem<String>(
+                        value: status,
+                        child: Text(status),
+                      );
+                    }).toList(),
+                    decoration:
+                        const InputDecoration(labelText: 'End Contract'),
+                  ),
+                  const SizedBox(height: 20),
+                  ...payments.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final payment = entry.value;
+                    return Column(
+                      key: ValueKey(index),
+                      children: [
+                        const Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Payment ${index + 1}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              onPressed: () => _removePayment(index),
+                              icon: const Icon(Icons.remove_circle_outline),
+                              color: Colors.red,
+                            ),
+                          ],
+                        ),
+                        TextFormField(
+                          controller: payment['paymentCount'],
+                          decoration:
+                              const InputDecoration(labelText: 'Payment Count'),
+                        ),
+                        TextFormField(
+                          controller: payment['advancePayment'],
+                          decoration: const InputDecoration(
+                              labelText: 'Advance Payment'),
+                        ),
+                        TextFormField(
+                          controller: payment['paymentType'],
+                          decoration:
+                              const InputDecoration(labelText: 'Payment Type'),
+                        ),
+                        TextFormField(
+                          controller: payment['paymentDate'],
+                          readOnly: true,
+                          decoration:
+                              const InputDecoration(labelText: 'Payment Date'),
+                          onTap: () =>
+                              _selectDate(context, payment['paymentDate']!),
+                        ),
+                        TextFormField(
+                          controller: payment['depositedOn'],
+                          readOnly: true,
+                          decoration:
+                              const InputDecoration(labelText: 'Next Payment'),
+                          onTap: () =>
+                              _selectDate(context, payment['depositedOn']!),
+                        ),
+                        TextFormField(
+                          controller: payment['paymentAmount'],
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                              labelText: 'Payment Amount'),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    );
+                  }),
+                  TextButton.icon(
+                    onPressed: _addPayment,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Payment'),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _saveRent,
+                    child: Text(
+                        widget.rent == null ? 'Create Rent' : 'Update Rent'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

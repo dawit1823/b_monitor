@@ -60,7 +60,7 @@ class ReportViewPage extends StatelessWidget {
                             await _rentService.getProfile(id: rent.profileId);
                         final company =
                             await _rentService.getCompany(id: rent.companyId);
-                        await generateAndPrintReport(
+                        await generateAndSaveReport(
                             rent, profile, report, company);
                       } catch (e) {
                         if (!context.mounted) return;

@@ -13,6 +13,7 @@ const createOrUpdateProfileRoute = '/createOrUpdateProperty';
 const employeeLoginRoute = '/EmployeeLoginPage';
 const accountantDashboardRoute = '/accountantDashboardRoute';
 const employeeRoute = '/employee';
+const forgotPasswordRoute = '/forgotPasswordRoute';
 const managerDashboardRoute = '/managerDashboard';
 const profileListRoute = '/profileListRoute';
 const userCheckerRoute = '/userChecker'; // Added route for UserChecker

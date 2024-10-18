@@ -1,3 +1,4 @@
+//properties_list_view.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/helper/loading/loading_screen.dart';
@@ -102,7 +103,8 @@ class PropertyListTile extends StatelessWidget {
         property.propertyNumber,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      subtitle: Text('${property.description}\nCompany: $companyName'),
+      subtitle:
+          Text('${property.description}.\nType: ${property.propertyType}'),
       trailing: IconButton(
         icon: const Icon(Icons.delete),
         onPressed: () async {

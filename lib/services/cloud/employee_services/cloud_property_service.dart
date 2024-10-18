@@ -55,6 +55,15 @@ class PropertyService {
     return CloudProperty.fromSnapshot(doc);
   }
 
+  Future<List<CloudProperty>> getPropertyByCompanyId(
+      {required String companyId}) async {
+    final querySnapshot =
+        await properties.where('companyId', isEqualTo: companyId).get();
+    return querySnapshot.docs
+        .map((doc) => CloudProperty.fromSnapshot(doc))
+        .toList();
+  }
+
   Future<CloudProperty> updateProperty({
     required String id,
     required String propertyType,

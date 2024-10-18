@@ -1,4 +1,3 @@
-// profile_list_view.dart
 import 'package:flutter/material.dart';
 import '../../../cloud/cloud_data_models.dart';
 
@@ -29,24 +28,46 @@ class ProfilesListView extends StatelessWidget {
         final profiles = groupedProfiles[companyId]!;
         final companyName = companyNames[companyId] ?? 'Unknown';
 
-        return ExpansionTile(
-          title: Text('Company: $companyName'),
-          children: profiles.map((profile) {
-            return ListTile(
-              title: Text('${profile.firstName} ${profile.lastName}'),
-              onTap: () => onTap(profile),
-              onLongPress: () => onLongPress(profile),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () async {
-                  final shouldDelete = await showDeleteDialog(context);
-                  if (shouldDelete) {
-                    onDeleteProfile(profile);
-                  }
-                },
+        return Card(
+          color: Colors.transparent,
+          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          elevation: 5.0,
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.all(16.0),
+            title: Text(
+              'Company: $companyName',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18.0,
               ),
-            );
-          }).toList(),
+            ),
+            backgroundColor: Colors.transparent,
+            children: profiles.map((profile) {
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                title: Text(
+                  '${profile.firstName} ${profile.lastName}',
+                  style: const TextStyle(fontSize: 16.0),
+                ),
+                onTap: () => onTap(profile),
+                onLongPress: () => onLongPress(profile),
+                tileColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    final shouldDelete = await showDeleteDialog(context);
+                    if (shouldDelete) {
+                      onDeleteProfile(profile);
+                    }
+                  },
+                ),
+              );
+            }).toList(),
+          ),
         );
       },
     );
