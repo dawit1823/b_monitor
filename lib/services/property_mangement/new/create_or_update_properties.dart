@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import '../../auth/auth_service.dart';
@@ -143,20 +145,31 @@ class _NewPropertyViewState extends State<NewPropertyView> {
             Text(widget.property != null ? 'Update Property' : 'New Property'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: const Icon(
+              Icons.save,
+              color: Colors.white,
+            ),
             onPressed: _saveProperty,
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'assets/bg/background_dashboard.jpg'), // Add your background image here
-            fit: BoxFit.cover,
+      body: Stack(children: [
+        Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/bg/background_dashboard.jpg'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+            child: Container(
+              color: Colors.black
+                  .withValues(alpha: 0.4), // Optional tint for better contrast
+            ),
           ),
         ),
-        child: _isLoading
+        _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -168,6 +181,10 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                         style: const TextStyle(color: Colors.red),
                       ),
                     DropdownButtonFormField<CloudCompany>(
+                      iconEnabledColor: Colors.white,
+                      dropdownColor: Colors.black.withValues(
+                        alpha: 0.5,
+                      ),
                       value: selectedCompany,
                       onChanged: (CloudCompany? newCompany) {
                         setState(() {
@@ -177,13 +194,16 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                       items: _companies
                           .map((company) => DropdownMenuItem(
                                 value: company,
-                                child: Text(company.companyName),
+                                child: Text(
+                                  company.companyName,
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ))
                           .toList(),
                       decoration: InputDecoration(
                         labelText: 'Company',
                         filled: true,
-                        fillColor: Colors.black.withOpacity(0.1),
+                        fillColor: Colors.white.withValues(alpha: 0.1),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -208,7 +228,10 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                         maxLines: 3),
                     const SizedBox(height: 10),
                     SwitchListTile(
-                      title: const Text('Is Rented'),
+                      title: const Text(
+                        'Is Rented',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       value: _isRented,
                       onChanged: (bool value) {
                         setState(() => _isRented = value);
@@ -231,7 +254,7 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                   ],
                 ),
               ),
-      ),
+      ]),
     );
   }
 
@@ -241,9 +264,10 @@ class _NewPropertyViewState extends State<NewPropertyView> {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
+        labelStyle: TextStyle(color: Colors.white),
         labelText: label,
         filled: true,
-        fillColor: Colors.black.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),

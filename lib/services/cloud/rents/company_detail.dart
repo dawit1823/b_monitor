@@ -1,4 +1,6 @@
 //company_detail.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -18,41 +20,51 @@ class CompanyDetailPage extends StatelessWidget {
           tag: 'companyName-${company.id}',
           child: Text(company.companyName),
         ),
-        backgroundColor: const Color.fromARGB(255, 75, 153, 255),
         elevation: 0,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'assets/bg/background_dashboard.jpg'), // Background image
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
+              ),
+            ),
           ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCompanyHeader(),
-              const SizedBox(height: 20),
-              _buildCompanyDetailCard(
-                  Icons.person, 'Owner', company.companyOwner),
-              _buildCompanyDetailCard(
-                  Icons.work, 'Company Name', company.companyName),
-              _buildCompanyDetailCard(
-                  Icons.location_on, 'Address', company.address),
-              _buildCompanyDetailCard(
-                  Icons.phone, 'Phone Number', company.phone),
-              _buildCompanyDetailCard(
-                  Icons.email, 'Email', company.emailAddress),
-              const SizedBox(height: 20),
-              _buildContactButton(context),
-              const SizedBox(height: 20),
-              _buildDeleteButton(context),
-            ],
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCompanyHeader(),
+                const SizedBox(height: 20),
+                _buildCompanyDetailCard(
+                    Icons.person, 'Owner', company.companyOwner),
+                _buildCompanyDetailCard(
+                    Icons.work, 'Company Name', company.companyName),
+                _buildCompanyDetailCard(
+                    Icons.location_on, 'Address', company.address),
+                _buildCompanyDetailCard(
+                    Icons.phone, 'Phone Number', company.phone),
+                _buildCompanyDetailCard(
+                    Icons.email, 'Email', company.emailAddress),
+                const SizedBox(height: 20),
+                _buildContactButton(context),
+                const SizedBox(height: 20),
+                _buildDeleteButton(context),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -70,7 +82,7 @@ class CompanyDetailPage extends StatelessWidget {
               color: Colors.grey[300],
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
+                  color: Colors.grey.withValues(alpha: 0.5),
                   spreadRadius: 4,
                   blurRadius: 6,
                   offset: const Offset(0, 3),
@@ -80,7 +92,7 @@ class CompanyDetailPage extends StatelessWidget {
             child: const Icon(
               Icons.business,
               size: 50,
-              color: Color.fromARGB(255, 75, 153, 255),
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 10),
@@ -89,7 +101,7 @@ class CompanyDetailPage extends StatelessWidget {
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: Color.fromARGB(255, 75, 153, 255),
+              color: Colors.black,
             ),
           ),
         ],
@@ -100,23 +112,29 @@ class CompanyDetailPage extends StatelessWidget {
   Widget _buildCompanyDetailCard(IconData icon, String label, String value) {
     return Card(
       elevation: 4,
-      shadowColor: Colors.grey[300],
+      color: Colors.transparent.withValues(alpha: 0.1),
+      shadowColor: Colors.transparent.withValues(alpha: 0.8),
       margin: const EdgeInsets.symmetric(vertical: 10.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
       ),
       child: ListTile(
-        leading: Icon(icon, color: const Color.fromARGB(255, 75, 153, 255)),
+        tileColor: Colors.black.withValues(alpha: 0.1),
+        leading: Icon(icon, color: Colors.white),
         title: Text(
           label,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
+            color: Colors.white,
           ),
         ),
         subtitle: Text(
           value,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.white,
+          ),
         ),
       ),
     );
@@ -136,7 +154,10 @@ class CompanyDetailPage extends StatelessWidget {
             await _deleteCompany(context);
           }
         },
-        icon: const Icon(Icons.delete),
+        icon: const Icon(
+          Icons.delete,
+          color: Colors.white,
+        ),
         label: const Text('Delete Company'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red, // Red to signify delete action
@@ -181,10 +202,13 @@ class CompanyDetailPage extends StatelessWidget {
             ),
           );
         },
-        icon: const Icon(Icons.email),
+        icon: const Icon(
+          Icons.email,
+          color: Colors.white,
+        ),
         label: const Text('Update Company'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 75, 153, 255),
+          backgroundColor: Colors.lightBlue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),

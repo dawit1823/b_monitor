@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cloud_data_models.dart';
@@ -12,79 +14,90 @@ class ReadProfile extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile Details'),
-        backgroundColor: Colors.purple,
         elevation: 0,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'assets/bg/background_dashboard.jpg'), // Background image
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(0),
-          child: Card(
-            elevation: 8.0,
-            color: Colors.white.withOpacity(0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
             ),
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProfileHeader(context),
-                  const Divider(
-                    color: Colors.black,
-                    height: 40,
-                    thickness: 1,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.business,
-                    label: 'Company Name',
-                    value: profile.companyName,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.person,
-                    label: 'Full Name',
-                    value: '${profile.firstName} ${profile.lastName}',
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.confirmation_number,
-                    label: 'TIN',
-                    value: profile.tin,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.email,
-                    label: 'Email',
-                    value: profile.email,
-                    isEmail: true,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.phone,
-                    label: 'Phone Number',
-                    value: profile.phoneNumber,
-                    isPhoneNumber: true,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.location_on,
-                    label: 'Address',
-                    value: profile.address,
-                  ),
-                  _buildProfileDetail(
-                    icon: Icons.file_copy,
-                    label: 'Contract Info',
-                    value: profile.contractInfo,
-                  ),
-                ],
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
           ),
-        ),
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(0),
+            child: Card(
+              elevation: 8.0,
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildProfileHeader(context),
+                    const Divider(
+                      color: Colors.white,
+                      height: 40,
+                      thickness: 1,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.business,
+                      label: 'Company Name',
+                      value: profile.companyName,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.person,
+                      label: 'Full Name',
+                      value: '${profile.firstName} ${profile.lastName}',
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.confirmation_number,
+                      label: 'TIN',
+                      value: profile.tin,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.email,
+                      label: 'Email',
+                      value: profile.email,
+                      isEmail: true,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.phone,
+                      label: 'Phone Number',
+                      value: profile.phoneNumber,
+                      isPhoneNumber: true,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.location_on,
+                      label: 'Address',
+                      value: profile.address,
+                    ),
+                    _buildProfileDetail(
+                      icon: Icons.file_copy,
+                      label: 'Contract Info',
+                      value: profile.contractInfo,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -94,7 +107,7 @@ class ReadProfile extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 40,
-          backgroundColor: Colors.purple,
+          backgroundColor: Colors.lightBlue,
           child: Text(
             profile.firstName[0] + profile.lastName[0],
             style: const TextStyle(
@@ -113,14 +126,14 @@ class ReadProfile extends StatelessWidget {
               selectionColor: Colors.black,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
               profile.companyName,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
             ),
           ],
@@ -141,7 +154,7 @@ class ReadProfile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.black),
+          Icon(icon, color: Colors.lightBlue),
           const SizedBox(width: 20),
           Expanded(
             child: GestureDetector(
@@ -172,17 +185,20 @@ class ReadProfile extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     value,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
+                      backgroundColor: isEmail || isPhoneNumber
+                          ? Colors.black
+                          : Colors.transparent,
                       color: isEmail || isPhoneNumber
-                          ? const Color.fromARGB(255, 0, 0, 0)
-                          : Colors.black,
+                          ? Colors.lightBlue
+                          : Colors.white,
                       decoration: isEmail || isPhoneNumber
                           ? TextDecoration.underline
                           : TextDecoration.none,

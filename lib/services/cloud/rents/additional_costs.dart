@@ -14,7 +14,6 @@ class AdditionalCostsPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Additional Costs'),
-          backgroundColor: Colors.purple, // Change app bar color to purple
           bottom: const TabBar(
             unselectedLabelColor: Colors.white,
             labelColor: Colors.black, // Change tab text color to white

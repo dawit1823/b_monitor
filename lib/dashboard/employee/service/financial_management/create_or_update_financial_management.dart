@@ -1,4 +1,3 @@
-//create_or_update_financial_management.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -28,6 +27,8 @@ class _CreateOrUpdateFinancialManagementState
   final TextEditingController _txnDateController = TextEditingController();
   final RentService _rentService = RentService();
 
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +50,10 @@ class _CreateOrUpdateFinancialManagementState
   }
 
   Future<void> _saveFinancialReport() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final txnType = _txnTypeController.text.trim();
     final description = _descriptionController.text.trim();
     final totalAmount = _totalAmountController.text.trim();
@@ -82,6 +87,18 @@ class _CreateOrUpdateFinancialManagementState
     });
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      _txnDateController.text = picked.toIso8601String().split('T').first;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,34 +106,117 @@ class _CreateOrUpdateFinancialManagementState
         title: Text(widget.report == null
             ? 'Create Financial Report'
             : 'Update Financial Report'),
+        backgroundColor: Color.fromARGB(255, 66, 143, 107),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _txnTypeController,
-              decoration: const InputDecoration(labelText: 'Transaction Type'),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/bg/accountant_dashboard.jpg'), // Background image
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _txnTypeController,
+                    decoration: InputDecoration(
+                      labelText: 'Transaction Type',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.8),
+                    ),
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Please enter a transaction type'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.8),
+                    ),
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Please enter a description'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _totalAmountController,
+                    decoration: InputDecoration(
+                      labelText: 'Total Amount',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.8),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Please enter the total amount'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _txnDateController,
+                    decoration: InputDecoration(
+                      labelText: 'Transaction Date',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.8),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: () => _selectDate(context),
+                      ),
+                    ),
+                    readOnly: true,
+                    onTap: () => _selectDate(context),
+                    validator: (value) {
+                      return (value == null || value.isEmpty)
+                          ? 'Please select a transaction date'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32.0, vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      backgroundColor: Color.fromARGB(255, 66, 143, 107),
+                    ),
+                    child: Text(
+                      widget.report == null ? 'Create' : 'Update',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            TextField(
-              controller: _totalAmountController,
-              decoration: const InputDecoration(labelText: 'Total Amount'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _txnDateController,
-              decoration: const InputDecoration(labelText: 'Transaction Date'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _handleSave,
-              child: Text(widget.report == null ? 'Create' : 'Update'),
-            ),
-          ],
+          ),
         ),
       ),
     );

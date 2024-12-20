@@ -211,7 +211,7 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
                                 borderRadius: BorderRadius.circular(15.0),
                               ),
                               elevation: 6.0,
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               shadowColor: const Color.fromARGB(255, 0, 0, 0),
                               margin:
                                   const EdgeInsets.symmetric(vertical: 10.0),
@@ -337,7 +337,7 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
           ),
           isThreeLine: true,
           trailing: PopupMenuButton<String>(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             onSelected: (value) async {
               if (value == 'View') {
                 Navigator.of(context).push(

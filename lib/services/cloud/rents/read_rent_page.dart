@@ -1,13 +1,13 @@
 //read_rent_page.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/profiles/read_profile.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/additional_costs.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/company_detail.dart';
-import 'package:r_and_e_monitor/services/cloud/rents/create_or_update_rents.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/read_property_page.dart';
-import '../reports/report_view_page.dart';
 import '../employee_services/cloud_property_service.dart';
 import '../employee_services/cloud_rent_service.dart';
 
@@ -23,16 +23,24 @@ class ReadRentPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('View Rent'),
-        backgroundColor: const Color.fromARGB(255, 75, 153, 255),
       ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/background_dashboard.jpg',
-              fit: BoxFit.cover, // Try changing this to fill or fitHeight
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.4), // Optional tint for better contrast
+              ),
             ),
           ),
 
@@ -131,16 +139,21 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildProfileCard(BuildContext context, CloudProfile profile) {
     return Card(
+      color: Colors.transparent,
       elevation: 4,
       child: ListTile(
-        leading: const Icon(Icons.account_circle, color: Colors.black),
+        leading: const Icon(Icons.account_circle, color: Colors.lightBlue),
         title: Text(
           '${profile.firstName} ${profile.lastName}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        subtitle: Text('Company: ${profile.companyName}'),
-        trailing: const Icon(Icons.arrow_forward_ios,
-            color: Color.fromARGB(255, 75, 153, 255)),
+        subtitle: Text(
+          'Company: ${profile.companyName}',
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.lightBlue),
         onTap: () {
           Navigator.push(
             context,
@@ -155,16 +168,21 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildPropertyCard(BuildContext context, CloudProperty property) {
     return Card(
+      color: Colors.transparent,
       elevation: 4,
       child: ListTile(
-        leading: const Icon(Icons.home, color: Colors.black),
+        leading: const Icon(Icons.home, color: Colors.lightBlue),
         title: Text(
           'Property: ${property.propertyType}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        subtitle: Text('Floor: ${property.floorNumber}'),
-        trailing: const Icon(Icons.arrow_forward_ios,
-            color: Color.fromARGB(255, 75, 153, 255)),
+        subtitle: Text(
+          'Floor: ${property.floorNumber}',
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.lightBlue),
         onTap: () {
           Navigator.push(
             context,
@@ -179,16 +197,21 @@ class ReadRentPage extends StatelessWidget {
 
   Widget _buildCompanyCard(BuildContext context, CloudCompany company) {
     return Card(
+      color: Colors.transparent,
       elevation: 4,
       child: ListTile(
-        leading: const Icon(Icons.business, color: Colors.black),
+        leading: const Icon(Icons.business, color: Colors.lightBlue),
         title: Text(
           company.companyName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
-        subtitle: Text('Owner: ${company.companyOwner}'),
-        trailing: const Icon(Icons.arrow_forward_ios,
-            color: Color.fromARGB(255, 75, 153, 255)),
+        subtitle: Text(
+          'Owner: ${company.companyOwner}',
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, color: Colors.lightBlue),
         onTap: () {
           Navigator.push(
             context,
@@ -204,7 +227,7 @@ class ReadRentPage extends StatelessWidget {
   Widget _buildRentDetailsCard(BuildContext context, CloudRent rent) {
     return Card(
       elevation: 4,
-      color: Colors.white.withOpacity(0.8),
+      color: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -215,7 +238,7 @@ class ReadRentPage extends StatelessWidget {
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.black),
+                  color: Colors.white),
             ),
             const Divider(),
             _buildDetailRow('Contract', rent.contract),
@@ -242,13 +265,13 @@ class ReadRentPage extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-                fontWeight: FontWeight.bold, color: Colors.black),
+                fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(width: 8),
           Text(
             value,
             style: const TextStyle(
-                fontWeight: FontWeight.normal, color: Colors.black),
+                fontWeight: FontWeight.normal, color: Colors.white),
           ),
         ],
       ),
@@ -264,13 +287,13 @@ class ReadRentPage extends StatelessWidget {
             Navigator.of(context).pop(); // Close the dialog when tapped outside
           },
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             child: GestureDetector(
               onTap: () {}, // Prevent dialog from closing when tapped inside
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(
@@ -296,7 +319,8 @@ class ReadRentPage extends StatelessWidget {
                             Navigator.of(context).pop(); // Close the dialog
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
+                            backgroundColor:
+                                Colors.transparent.withValues(alpha: 0.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
@@ -352,7 +376,13 @@ class ReadRentPage extends StatelessWidget {
         }
 
         return DataRow(
-          cells: paddedCells.map((cell) => DataCell(Text(cell))).toList(),
+          cells: paddedCells
+              .map((cell) => DataCell(Text(
+                    cell,
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  )))
+              .toList(),
         );
       }).toList(),
     );
@@ -362,45 +392,24 @@ class ReadRentPage extends StatelessWidget {
       BuildContext context, CloudRent rent, CloudProfile profile) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(4.0)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.3),
+        fillColor: Colors.lightBlue,
       ),
       isExpanded: true,
       hint: const Text(
         "Options",
+        style: TextStyle(color: Colors.white),
       ),
       items: const [
-        DropdownMenuItem(value: 'Edit', child: Text('Edit Rent')),
         DropdownMenuItem(value: 'Delete', child: Text('Delete Rent')),
         DropdownMenuItem(
             value: 'AdditionalCosts', child: Text('Penality & Expenses')),
-        DropdownMenuItem(
-            value: 'GenerateReport', child: Text('Generate Rent Report')),
       ],
       onChanged: (String? value) async {
         if (!context.mounted) return; // Check if the widget is still mounted
 
         switch (value) {
-          case 'Edit':
-            final profiles =
-                await _rentService.allProfiles(creatorId: rent.creatorId).first;
-            final properties = await _propertyService
-                .allProperties(creatorId: rent.creatorId)
-                .first;
-            if (context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateOrUpdateRentView(
-                    rent: rent,
-                    profiles: profiles.toList(),
-                    properties: properties.toList(),
-                  ),
-                ),
-              );
-            }
-            break;
           case 'Delete':
             final shouldDelete = await showDeleteDialog(context);
             if (shouldDelete) {
@@ -419,16 +428,6 @@ class ReadRentPage extends StatelessWidget {
             }
             break;
 
-          case 'GenerateReport':
-            if (context.mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ReportViewPage(rentId: rent.id),
-                ),
-              );
-            }
-            break;
           default:
             break;
         }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:r_and_e_monitor/dashboard/employee/service/financial_management/financial_report_employee.dart';
 import 'package:r_and_e_monitor/dashboard/employee/service/financial_management/list_financial_management.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/logout_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -28,7 +29,7 @@ class AccountantDashboard extends StatelessWidget {
             icon: const Icon(Icons.logout),
             color: Colors.black,
             onPressed: () async {
-              bool logoutConfirmed = await _showLogoutDialog(context);
+              bool logoutConfirmed = await showLogOutDialog(context);
               if (logoutConfirmed) {
                 await AuthService.firebase().signOut();
                 if (!context.mounted) return;
@@ -58,7 +59,7 @@ class AccountantDashboard extends StatelessWidget {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20.0),
                   child: Card(
-                    color: Colors.black.withOpacity(0),
+                    color: Colors.black.withValues(alpha: 0),
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15.0),
@@ -94,7 +95,7 @@ class AccountantDashboard extends StatelessWidget {
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 30),
+                          const SizedBox(height: 20),
                           // Responsive button layout
                           orientation == Orientation.portrait
                               ? _buildButton(context)
@@ -241,31 +242,5 @@ class AccountantDashboard extends StatelessWidget {
         );
       },
     );
-  }
-
-  Future<bool> _showLogoutDialog(BuildContext context) async {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: const Text('Yes'),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false);
   }
 }

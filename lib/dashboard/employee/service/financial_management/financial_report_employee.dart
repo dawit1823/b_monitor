@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_to_list_in_spreads
+
 import 'package:flutter/material.dart';
 import '../../../../services/cloud/cloud_data_models.dart';
 import '../../../../services/cloud/employee_services/cloud_rent_service.dart';
@@ -65,12 +67,23 @@ class _FinancialManagementReportEmployeeState
   Future<void> _selectDateRange(BuildContext context) async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDateRange: DateTimeRange(
-        start: _selectedStartDate ?? DateTime.now(),
-        end: _selectedEndDate ?? DateTime.now(),
-      ),
+      initialDateRange: _selectedStartDate != null && _selectedEndDate != null
+          ? DateTimeRange(start: _selectedStartDate!, end: _selectedEndDate!)
+          : DateTimeRange(start: DateTime.now(), end: DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.deepPurple, // Header color
+            colorScheme:
+                ColorScheme.light(primary: Colors.deepPurple), // Selected dates
+            buttonTheme:
+                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -168,7 +181,11 @@ class _FinancialManagementReportEmployeeState
         backgroundColor: Color.fromARGB(255, 66, 143, 107),
         title: Row(
           children: [
-            const Icon(Icons.pie_chart, size: 28),
+            const Icon(
+              Icons.pie_chart,
+              size: 28,
+              color: Colors.white,
+            ),
             const SizedBox(width: 8),
             // Wrap the Text widget with Expanded to prevent overflow
             const Expanded(
@@ -176,18 +193,23 @@ class _FinancialManagementReportEmployeeState
                 'Financial Management Report',
                 overflow: TextOverflow
                     .ellipsis, // This will add '...' if text is too long
-                selectionColor: Color.fromARGB(255, 66, 143, 107),
               ),
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_alt),
+            icon: const Icon(
+              Icons.filter_alt,
+              color: Colors.white,
+            ),
             onPressed: () => _selectDateRange(context),
           ),
           IconButton(
-            icon: const Icon(Icons.download),
+            icon: const Icon(
+              Icons.download,
+              color: Colors.white,
+            ),
             onPressed: _generatePDF,
           ),
         ],
@@ -199,7 +221,7 @@ class _FinancialManagementReportEmployeeState
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
-                      Icon(Icons.report, size: 100, color: Colors.black),
+                      Icon(Icons.report, size: 100, color: Colors.white),
                       SizedBox(height: 16),
                       Text('No financial reports found.',
                           style: TextStyle(fontSize: 18, color: Colors.black)),
@@ -218,8 +240,8 @@ class _FinancialManagementReportEmployeeState
                               child: SingleChildScrollView(
                                 child: DataTable(
                                   border: TableBorder.all(),
-                                  headingRowColor: WidgetStateProperty.all(
-                                      const Color.fromARGB(255, 213, 237, 179)),
+                                  headingRowColor:
+                                      WidgetStateProperty.all(Colors.lightBlue),
                                   columns: const [
                                     DataColumn(label: Text('No.')),
                                     DataColumn(label: Text('Transaction Type')),
@@ -236,11 +258,32 @@ class _FinancialManagementReportEmployeeState
                                       var report = entry.value;
                                       return DataRow(
                                         cells: [
-                                          DataCell(Text(index.toString())),
-                                          DataCell(Text(report.txnType)),
-                                          DataCell(Text(report.discription)),
-                                          DataCell(Text(report.totalAmount)),
-                                          DataCell(Text(report.txnDate)),
+                                          DataCell(Text(
+                                            index.toString(),
+                                            selectionColor: Colors.black,
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )),
+                                          DataCell(Text(
+                                            report.txnType,
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )),
+                                          DataCell(Text(
+                                            report.discription,
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )),
+                                          DataCell(Text(
+                                            report.totalAmount,
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )),
+                                          DataCell(Text(
+                                            report.txnDate,
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )),
                                         ],
                                       );
                                     }).toList(),
@@ -256,7 +299,8 @@ class _FinancialManagementReportEmployeeState
                                       DataCell(
                                         Text('\$${subTotal.toStringAsFixed(2)}',
                                             style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black),
                                             selectionColor: Colors.black),
                                       ),
                                       const DataCell(Text('')),
@@ -265,7 +309,8 @@ class _FinancialManagementReportEmployeeState
                                       DataCell(
                                         Text('VAT (15%)',
                                             style: TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black),
                                             selectionColor: Colors.black),
                                       ),
                                       const DataCell(Text('')),
@@ -273,7 +318,8 @@ class _FinancialManagementReportEmployeeState
                                       DataCell(
                                         Text('\$${vat.toStringAsFixed(2)}',
                                             style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black),
                                             selectionColor: Colors.black),
                                       ),
                                       const DataCell(Text('')),
@@ -291,7 +337,8 @@ class _FinancialManagementReportEmployeeState
                                         Text(
                                             '\$${totalAmount.toStringAsFixed(2)}',
                                             style: const TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black),
                                             selectionColor: Colors.black),
                                       ),
                                       const DataCell(Text('')),
@@ -314,20 +361,32 @@ class _FinancialManagementReportEmployeeState
                                     'Total Summary',
                                     style: TextStyle(
                                         fontSize: 18,
-                                        fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black),
                                     selectionColor: Colors.black,
                                   ),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          'SubTotal: \$${subTotal.toStringAsFixed(2)}'),
+                                        'SubTotal: \$${subTotal.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black),
+                                      ),
                                       Text(
-                                          'VAT (15%): \$${vat.toStringAsFixed(2)}'),
+                                        'VAT (15%): \$${vat.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black),
+                                        selectionColor: Colors.black,
+                                      ),
                                       Text(
                                         'Total: \$${totalAmount.toStringAsFixed(2)}',
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black),
                                         selectionColor: Colors.black,
                                       ),
                                     ],

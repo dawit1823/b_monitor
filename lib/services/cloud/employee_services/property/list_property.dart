@@ -49,7 +49,10 @@ class _PropertyViewState extends State<ListProperty> {
                 ),
               );
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import '../../../auth/auth_service.dart';
 import '../../../cloud/cloud_data_models.dart';
@@ -126,139 +128,157 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(widget.profile == null ? 'Create Profile' : 'Update Profile'),
-        backgroundColor: Colors.purple,
+        title: Text(widget.profile == null
+            ? 'Create Tenant Profile'
+            : 'Update Tenant Profile'),
         elevation: 6.0,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          image: DecorationImage(
-            //opacity: 1,
-            image: AssetImage(
-                'assets/bg/background_dashboard.jpg'), // Add background image here
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.3), // Optional tint for better contrast
+              ),
+            ),
           ),
-        ),
-        child: FutureBuilder<List<CloudCompany>>(
-          future: _companiesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('No companies found.'));
-            } else {
-              final companies = snapshot.data!;
+          FutureBuilder<List<CloudCompany>>(
+            future: _companiesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('No companies found.'));
+              } else {
+                final companies = snapshot.data!;
 
-              if (selectedCompany == null && companies.isNotEmpty) {
-                selectedCompany = companies.first;
-              }
+                if (selectedCompany == null && companies.isNotEmpty) {
+                  selectedCompany = companies.first;
+                }
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<CloudCompany>(
-                      value: selectedCompany,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedCompany = value;
-                        });
-                      },
-                      items: companies.map((company) {
-                        return DropdownMenuItem<CloudCompany>(
-                          value: company,
-                          child: Text(
-                            company.companyName,
-                            selectionColor: Colors.black,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      DropdownButtonFormField<CloudCompany>(
+                        value: selectedCompany,
+                        dropdownColor: Colors.white,
+                        iconEnabledColor: Colors.white,
+                        iconSize: 24,
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCompany = value;
+                          });
+                        },
+                        items: companies.map((company) {
+                          return DropdownMenuItem<CloudCompany>(
+                            value: company,
+                            child: Text(
+                              company.companyName,
+                              //selectionColor: Colors.white,
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          );
+                        }).toList(),
+                        decoration: InputDecoration(
+                          labelText: 'Select Company',
+                          labelStyle: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }).toList(),
-                      decoration: InputDecoration(
-                        labelText: 'Select Company',
-                        labelStyle: const TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      const SizedBox(height: 16.0),
+                      Card(
+                        elevation: 0,
+                        color: Colors.black.withValues(alpha: 0.3),
+                        shadowColor: Colors.black,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16.0),
                         ),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.1),
-                      ),
-                    ),
-                    const SizedBox(height: 16.0),
-                    Card(
-                      elevation: 0,
-                      color: Colors.transparent,
-                      shadowColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            _buildTextField(
-                              controller: _companyNameController,
-                              label: 'Company Name',
-                            ),
-                            _buildTextField(
-                              controller: _firstNameController,
-                              label: 'First Name',
-                            ),
-                            _buildTextField(
-                              controller: _lastNameController,
-                              label: 'Last Name',
-                            ),
-                            _buildTextField(
-                              controller: _tinController,
-                              label: 'TIN',
-                            ),
-                            _buildTextField(
-                              controller: _emailController,
-                              label: 'Email',
-                            ),
-                            _buildTextField(
-                              controller: _phoneNumberController,
-                              label: 'Phone Number',
-                            ),
-                            _buildTextField(
-                              controller: _addressController,
-                              label: 'Address',
-                            ),
-                            _buildTextField(
-                              controller: _contractInfoController,
-                              label: 'Contract Info',
-                            ),
-                            const SizedBox(height: 24.0),
-                            ElevatedButton(
-                              onPressed: _saveProfile,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16.0,
-                                  horizontal: 32.0,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 5.0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              _buildTextField(
+                                controller: _companyNameController,
+                                label: 'Company Name',
                               ),
-                              child: const Text(
-                                'Save',
-                                style: TextStyle(fontSize: 18),
+                              _buildTextField(
+                                controller: _firstNameController,
+                                label: 'First Name',
                               ),
-                            ),
-                          ],
+                              _buildTextField(
+                                controller: _lastNameController,
+                                label: 'Last Name',
+                              ),
+                              _buildTextField(
+                                controller: _tinController,
+                                label: 'TIN',
+                              ),
+                              _buildTextField(
+                                controller: _emailController,
+                                label: 'Email',
+                              ),
+                              _buildTextField(
+                                controller: _phoneNumberController,
+                                label: 'Phone Number',
+                              ),
+                              _buildTextField(
+                                controller: _addressController,
+                                label: 'Address',
+                              ),
+                              _buildTextField(
+                                controller: _contractInfoController,
+                                label: 'Contract Info',
+                              ),
+                              const SizedBox(height: 24.0),
+                              ElevatedButton(
+                                onPressed: _saveProfile,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16.0,
+                                    horizontal: 32.0,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 5.0,
+                                ),
+                                child: const Text(
+                                  'Save',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            }
-          },
-        ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -271,15 +291,15 @@ class _CreateOrUpdateProfileState extends State<CreateOrUpdateProfile> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.black),
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.black),
+          labelStyle: const TextStyle(color: Colors.white),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           filled: true,
-          fillColor: Colors.black.withOpacity(0.1),
+          fillColor: Colors.white.withValues(alpha: 0.1),
         ),
       ),
     );

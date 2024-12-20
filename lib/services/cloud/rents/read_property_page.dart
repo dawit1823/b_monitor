@@ -1,5 +1,6 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import 'package:r_and_e_monitor/services/property_mangement/new/create_or_update_properties.dart';
 import '../cloud_data_models.dart';
 import '../employee_services/cloud_property_service.dart';
 
@@ -15,17 +16,24 @@ class ReadPropertyPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('View Property'),
         centerTitle: true,
-        backgroundColor: Colors.purple,
       ),
       body: Stack(
         children: [
           // Background Image
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.8,
-              child: Image.asset(
-                'assets/bg/background_dashboard.jpg', // Replace with your background image path
+
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
                 fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
           ),
@@ -84,31 +92,6 @@ class ReadPropertyPage extends StatelessWidget {
                         iconColor:
                             property.isRented ? Colors.green : Colors.red,
                       ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => NewPropertyView(
-                                  property:
-                                      property, // Pass the current property
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Update Property'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 );
@@ -125,11 +108,11 @@ class ReadPropertyPage extends StatelessWidget {
     required IconData icon,
     required String label,
     required String value,
-    Color iconColor = Colors.black,
+    Color iconColor = Colors.white,
   }) {
     return Card(
       elevation: 4.0,
-      color: Colors.white.withOpacity(0.2),
+      color: Colors.white.withValues(alpha: 0.2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
@@ -141,14 +124,14 @@ class ReadPropertyPage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: Colors.white,
           ),
         ),
         subtitle: Text(
           value,
           style: const TextStyle(
             fontSize: 14,
-            color: Colors.black54,
+            color: Colors.white,
           ),
         ),
       ),

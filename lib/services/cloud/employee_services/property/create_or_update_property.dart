@@ -1,4 +1,5 @@
-// create_or_update_property.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
@@ -34,8 +35,6 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
   @override
   void initState() {
     super.initState();
-
-    // Initialize the controllers with existing property data if available
     _propertyTypeController =
         TextEditingController(text: widget.property?.propertyType ?? '');
     _floorNumberController =
@@ -64,16 +63,15 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
 
   Future<void> _createOrUpdateProperty() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final propertyType = _propertyTypeController.text;
-      final floorNumber = _floorNumberController.text;
-      final propertyNumber = _propertyNumberController.text;
-      final sizeInSquareMeters = _sizeInSquareMetersController.text;
-      final pricePerMonth = _pricePerMonthController.text;
-      final description = _descriptionController.text;
-
       try {
+        final propertyType = _propertyTypeController.text;
+        final floorNumber = _floorNumberController.text;
+        final propertyNumber = _propertyNumberController.text;
+        final sizeInSquareMeters = _sizeInSquareMetersController.text;
+        final pricePerMonth = _pricePerMonthController.text;
+        final description = _descriptionController.text;
+
         if (widget.property == null) {
-          // Creating a new property
           await PropertyService().createProperty(
             creator: widget.creatorId,
             companyId: widget.companyId,
@@ -86,7 +84,6 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
             isRented: _isRented,
           );
         } else {
-          // Updating an existing property
           await PropertyService().updateProperty(
             id: widget.property!.id,
             propertyType: propertyType,
@@ -99,10 +96,9 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
           );
         }
         if (!mounted) return;
-        Navigator.of(context).pop(); // Go back after saving
+        Navigator.of(context).pop();
       } on CloudStorageException catch (e) {
-        _showErrorDialog(
-            context, 'Error', 'Failed to save property: ${e.toString()}');
+        _showErrorDialog(context, 'Error', 'Failed to save property: $e');
       }
     }
   }
@@ -127,80 +123,76 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 66, 143, 107),
         title: Text(
             widget.property == null ? 'Create Property' : 'Update Property'),
+        backgroundColor: const Color(0xFF428F6B),
+        centerTitle: true,
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/accountant_dashboard.jpg', // Add a background image path
-              fit: BoxFit.cover,
+          // Background image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/accountant_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.4), // Optional tint for better contrast
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          // Form Content
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
-              child: ListView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _buildTextField('Property Type', _propertyTypeController),
+                  _buildTextField('Floor Number', _floorNumberController),
+                  _buildTextField('Property Number', _propertyNumberController),
                   _buildTextField(
-                    controller: _propertyTypeController,
-                    labelText: 'Property Type',
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter property type' : null,
-                  ),
-                  _buildTextField(
-                    controller: _floorNumberController,
-                    labelText: 'Floor Number',
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter floor number' : null,
-                  ),
-                  _buildTextField(
-                    controller: _propertyNumberController,
-                    labelText: 'Property Number',
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter property number' : null,
-                  ),
-                  _buildTextField(
-                    controller: _sizeInSquareMetersController,
-                    labelText: 'Size in Square Meters',
-                    validator: (value) => value!.isEmpty
-                        ? 'Please enter size in square meters'
-                        : null,
-                  ),
-                  _buildTextField(
-                    controller: _pricePerMonthController,
-                    labelText: 'Price per Month',
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter price per month' : null,
-                  ),
-                  _buildTextField(
-                    controller: _descriptionController,
-                    labelText: 'Description',
-                    maxLines: 3,
-                  ),
-                  SwitchListTile(
-                    title: const Text('Is Rented'),
+                      'Size in Square Meters', _sizeInSquareMetersController),
+                  _buildTextField('Price per Month', _pricePerMonthController),
+                  _buildTextField('Description', _descriptionController,
+                      maxLines: 3),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Is Rented?',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    activeColor: Colors.lightBlue,
                     value: _isRented,
-                    onChanged: (bool value) {
+                    onChanged: (value) {
                       setState(() {
                         _isRented = value;
                       });
                     },
                   ),
                   const SizedBox(height: 20),
+                  // Gradient Button
                   ElevatedButton(
                     onPressed: _createOrUpdateProperty,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: Color.fromARGB(255, 66, 143, 107),
+                      backgroundColor: Colors.lightBlue,
                     ),
-                    child: Text(widget.property == null ? 'Create' : 'Update'),
+                    child: Text(
+                      widget.property == null
+                          ? 'Create Property'
+                          : 'Update Property',
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -211,26 +203,29 @@ class _CreateOrUpdatePropertyState extends State<CreateOrUpdateProperty> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {int maxLines = 1}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
+        maxLines: maxLines,
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          labelText: labelText,
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.white),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.2),
+          fillColor: Colors.white.withValues(alpha: 0.1),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF428F6B), width: 2),
           ),
         ),
-        validator: validator,
-        maxLines: maxLines,
+        validator: (value) => value!.isEmpty ? 'Please enter $label' : null,
       ),
     );
   }

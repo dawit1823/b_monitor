@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../dashboard/views/utilities/dialogs/delete_dialog.dart';
 import '../../../cloud/cloud_data_models.dart';
 
 typedef ProfileCallback = void Function(CloudProfile profile);
@@ -29,26 +30,29 @@ class ProfilesListView extends StatelessWidget {
         final companyName = companyNames[companyId] ?? 'Unknown';
 
         return Card(
-          color: Colors.transparent,
-          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-          elevation: 5.0,
+          color: Colors.white.withValues(alpha: 0.1),
+          margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
+          elevation: 0,
           child: ExpansionTile(
-            tilePadding: const EdgeInsets.all(16.0),
+            iconColor: Colors.lightBlue,
+            tilePadding: const EdgeInsets.all(8.0),
             title: Text(
               'Company: $companyName',
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18.0,
-              ),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18.0,
+                  color: Colors.white),
             ),
-            backgroundColor: Colors.transparent,
+            backgroundColor: Colors.black.withValues(alpha: 0.3),
             children: profiles.map((profile) {
               return ListTile(
+                iconColor: Colors.white,
+                selectedColor: Colors.black.withValues(alpha: 0.3),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 title: Text(
-                  '${profile.firstName} ${profile.lastName}',
-                  style: const TextStyle(fontSize: 16.0),
+                  '${profile.companyName} / ${profile.firstName}',
+                  style: const TextStyle(fontSize: 16.0, color: Colors.white),
                 ),
                 onTap: () => onTap(profile),
                 onLongPress: () => onLongPress(profile),
@@ -71,31 +75,5 @@ class ProfilesListView extends StatelessWidget {
         );
       },
     );
-  }
-
-  Future<bool> showDeleteDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Delete"),
-          content: const Text("Are you sure you want to delete this profile?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: const Text("Delete"),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false);
   }
 }

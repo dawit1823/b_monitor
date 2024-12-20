@@ -1,7 +1,11 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:r_and_e_monitor/dashboard/admin/add_member.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/logout_dialog.dart';
 import 'package:r_and_e_monitor/enums/menu_action.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
 import 'package:r_and_e_monitor/services/auth/bloc/auth_bloc.dart';
@@ -36,51 +40,38 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> _checkOverdueRents() async {
     try {
+      // Fetch rents stream and get the first snapshot
       final rentsStream = _rentService.allRents(
-          creatorId: AuthService.firebase().currentUser!.id);
+        creatorId: AuthService.firebase().currentUser!.id,
+      );
       final rents = await rentsStream.first;
 
-      setState(() {
-        _hasOverdueRents = rents.any((rent) {
-          final dueDate = DateTime.parse(rent.dueDate);
-          return DateTime.now().isAfter(dueDate);
-        });
+      // Update state based on overdue rent calculation
+      final hasOverdue = rents.any((rent) {
+        // Exclude rents with 'Contract_Ended'
+        if (rent.endContract == 'Contract_Ended') {
+          return false;
+        }
+        final dueDate = DateTime.parse(rent.dueDate);
+        // Check if rent is overdue or near overdue
+        return DateTime.now().isAfter(dueDate) ||
+            DateTime.now().difference(dueDate).inDays >= -5;
+        // Overdue if past due date
       });
+
+      if (mounted) {
+        setState(() {
+          _hasOverdueRents = hasOverdue;
+        });
+      }
     } catch (e) {
-      // Handle error if needed
+      // Handle errors gracefully and ensure the button stays hidden in case of failure
+      if (mounted) {
+        setState(() {
+          _hasOverdueRents = false;
+        });
+      }
     }
-  }
-
-  Future<bool> showLogoutDialog(BuildContext context) async {
-    if (!context.mounted) return false;
-
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (context.mounted) {
-                  Navigator.of(context).pop(false);
-                }
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (context.mounted) {
-                  Navigator.of(context).pop(true);
-                }
-              },
-              child: const Text('Yes'),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false);
   }
 
   Widget _buildDrawerTile({
@@ -92,35 +83,35 @@ class _AdminDashboardState extends State<AdminDashboard> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: Colors.black.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 1,
               offset: const Offset(0, 3),
             ),
           ],
         ),
         child: ListTile(
-          leading: Icon(icon, color: Colors.deepPurple),
+          leading: Icon(icon, color: Colors.white),
           title: Text(
             title,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: Colors.white,
             ),
           ),
           trailing: const Icon(Icons.arrow_forward_ios,
-              color: Colors.deepPurple, size: 18),
+              color: Colors.white, size: 18),
           onTap: onTap,
-          tileColor: Colors.grey[100],
+          tileColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          hoverColor: Colors.deepPurple.withOpacity(0.1),
-          splashColor: Colors.deepPurple.withOpacity(0.2),
+          hoverColor: Colors.blueGrey.withValues(alpha: 0.1),
+          splashColor: Colors.blueGrey.withValues(alpha: 0.2),
         ),
       ),
     );
@@ -131,12 +122,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
-        backgroundColor: Colors.deepPurple,
+
+        // backgroundColor: const Color.fromARGB(163, 1, 29, 29),
         actions: [
           PopupMenuButton<MenuAction>(
+            iconSize: 35,
+            iconColor: Colors.white,
+            color: Colors.white.withValues(alpha: 0.8),
             onSelected: (MenuAction action) async {
               if (action == MenuAction.signOut) {
-                bool logoutConfirmed = await showLogoutDialog(context);
+                bool logoutConfirmed = await showLogOutDialog(context);
                 if (logoutConfirmed && context.mounted) {
                   context.read<AuthBloc>().add(const AuthEventLogOut());
                 }
@@ -151,12 +146,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ];
             },
           ),
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          )
         ],
       ),
       drawer: Drawer(
         child: Container(
           decoration: const BoxDecoration(
-            color: Colors.deepPurple,
             image: DecorationImage(
               image: AssetImage('assets/bg/background_dashboard.jpg'),
               fit: BoxFit.cover,
@@ -167,8 +169,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               DrawerHeader(
                 decoration: BoxDecoration(
-                  color:
-                      Colors.black.withOpacity(0.5), // Semi-transparent overlay
+                  color: Colors.black
+                      .withValues(alpha: 0.5), // Semi-transparent overlay
                 ),
                 child: Container(
                   alignment: Alignment.bottomLeft,
@@ -279,15 +281,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
       body: Stack(
         children: [
           // Background image
-          Image.asset(
-            'assets/bg/background_dashboard.jpg', // Ensure the image is added in assets and pubspec.yaml
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
+              ),
+            ),
           ),
           // Semi-transparent overlay
           Container(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.1),
           ),
           Center(
             child: BlocListener<AuthBloc, AuthState>(
@@ -302,17 +313,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   elevation: 8.0,
                   color: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.0),
+                    borderRadius: BorderRadius.circular(24.0),
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.all(24.0),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           'Welcome to the Admin Dashboard!',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Color.fromARGB(255, 255, 255, 255),
                           ),
@@ -320,45 +331,76 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          'Select a tool from the menu to manage the system.',
+                          'Today is ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
                           style: TextStyle(
-                            fontSize: 16,
-                            color: Color.fromARGB(255, 0, 0, 0),
+                            fontSize: 18,
+                            color: Colors.white,
                           ),
-                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Current time: ${DateFormat('hh:mm a').format(DateTime.now())}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(
+                            height: 20), // Add some space before the button
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const RentList()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Colors.blueAccent, // Customize button color
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32.0, vertical: 16.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          child: const Text(
+                            'Go to Rent List',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        if (_hasOverdueRents) // Only show if there are overdue rents
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red, // Alerting color
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32.0, vertical: 16.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RentOverdueReminder()),
+                              );
+                            },
+                            child: const Text(
+                              'Rent Overdue Reminder',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                          ),
                       ],
                     ),
                   ),
                 ),
-
-                // const SizedBox(height: 20),
               ),
             ),
           ),
-
-          if (_hasOverdueRents)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Alerting color
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32.0, vertical: 16.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const RentOverdueReminder()),
-                );
-              },
-              child: const Text(
-                'Rent Overdue Reminder',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
         ],
       ),
     );

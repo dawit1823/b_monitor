@@ -1,4 +1,6 @@
 // list_company.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/company/create_or_update_companies.dart';
@@ -19,12 +21,18 @@ class ListCompany extends StatelessWidget {
       body: Stack(
         children: [
           // Background Image
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.9, // Slight transparency for the background
-              child: Image.asset(
-                'assets/bg/background_dashboard.jpg', // Add your background image in the assets folder
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
                 fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
           ),
@@ -68,13 +76,16 @@ class ListCompany extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20.0),
                           gradient: const LinearGradient(
-                            colors: [Colors.blueAccent, Colors.lightBlueAccent],
+                            colors: [
+                              Colors.transparent,
+                              Color.fromARGB(255, 72, 116, 138)
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               spreadRadius: 2,
                               blurRadius: 4,
                               offset: const Offset(2, 2), // Shadow position
@@ -91,9 +102,9 @@ class ListCompany extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 18.0,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 0, 0,
-                                      0), // Text color to contrast the gradient
-                                ),
+                                  color: Colors.white,
+                                ), // Text color to contrast the gradient
+
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 10.0),
@@ -102,17 +113,17 @@ class ListCompany extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 14.0,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 0, 0, 0),
+                                  color: Colors.white,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 10.0),
                               Expanded(
                                 child: Text(
-                                  'Address: ${company.address}',
+                                  'Owner: ${company.companyOwner}',
                                   style: const TextStyle(
                                     fontSize: 14.0,
-                                    color: Colors.white70,
+                                    color: Colors.white,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 2,
@@ -131,6 +142,7 @@ class ListCompany extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.lightBlue,
         onPressed: () {
           Navigator.push(
             context,
@@ -138,7 +150,10 @@ class ListCompany extends StatelessWidget {
                 builder: (context) => const CreateOrUpdateCompany()),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }

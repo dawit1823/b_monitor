@@ -1,4 +1,6 @@
 //property_view.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
@@ -39,16 +41,29 @@ class _PropertyViewState extends State<PropertyView> {
                 builder: (context) => const NewPropertyView(),
               ));
             },
-            icon: const Icon(Icons.add),
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/background_dashboard.jpg', // Replace with your image path
-              fit: BoxFit.cover,
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.3), // Optional tint for better contrast
+              ),
             ),
           ),
           StreamBuilder(
@@ -93,11 +108,14 @@ class _PropertyViewState extends State<PropertyView> {
                                 margin: const EdgeInsets.symmetric(
                                     vertical: 10.0, horizontal: 16.0),
                                 child: ExpansionTile(
+                                  collapsedIconColor: Colors.white,
+                                  iconColor: Colors.lightBlue,
                                   title: Text(
                                     'Company: $companyName',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18.0,
+                                      color: Colors.white,
                                     ),
                                   ),
                                   children: [

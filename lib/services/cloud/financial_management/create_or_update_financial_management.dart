@@ -1,4 +1,5 @@
-//create_or_update_financial_management.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import '../../auth/auth_service.dart';
 import '../cloud_data_models.dart';
@@ -156,86 +157,152 @@ class _CreateOrUpdateFinancialManagementState
             ? 'Create Financial Report'
             : 'Update Financial Report'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: <Widget>[
-              DropdownButtonFormField<CloudCompany>(
-                value: selectedCompany,
-                onChanged: (value) {
-                  setState(() {
-                    selectedCompany = value!;
-                  });
-                },
-                items: _companies.map((company) {
-                  return DropdownMenuItem<CloudCompany>(
-                    value: company,
-                    child: Text(company.companyName),
-                  );
-                }).toList(),
-                decoration: const InputDecoration(labelText: 'Select Company'),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
               ),
-              TextFormField(
-                controller: _txnTypeController,
-                decoration:
-                    const InputDecoration(labelText: 'Transaction Type'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Transaction Type';
-                  }
-                  return null;
-                },
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Description';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _totalAmountController,
-                decoration: const InputDecoration(labelText: 'Total Amount'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Total Amount';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _txnDateController,
-                readOnly:
-                    true, // Make it read-only so users cannot manually enter a date
-                decoration: const InputDecoration(
-                  labelText: 'Transaction Date',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                onTap: () =>
-                    _pickTransactionDate(context), // Show date picker on tap
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Transaction Date';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: _saveFinancialReport,
-                child:
-                    Text(widget.financialReport == null ? 'Create' : 'Update'),
-              ),
-            ],
+            ),
           ),
-        ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                elevation: 8,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: <Widget>[
+                        DropdownButtonFormField<CloudCompany>(
+                          value: selectedCompany,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCompany = value!;
+                            });
+                          },
+                          items: _companies.map((company) {
+                            return DropdownMenuItem<CloudCompany>(
+                              value: company,
+                              child: Text(
+                                company.companyName,
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            );
+                          }).toList(),
+                          decoration: InputDecoration(
+                            labelStyle: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                            labelText: 'Select Company',
+                            filled: true,
+                            fillColor: Colors.black.withValues(alpha: 0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _txnTypeController,
+                          labelText: 'Transaction Type',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _descriptionController,
+                          labelText: 'Description',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _totalAmountController,
+                          labelText: 'Total Amount',
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _txnDateController,
+                          labelText: 'Transaction Date',
+                          readOnly: true,
+                          onTap: () => _pickTransactionDate(context),
+                          suffixIcon: const Icon(Icons.calendar_today),
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton(
+                          onPressed: _saveFinancialReport,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 15, horizontal: 30),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            widget.financialReport == null
+                                ? 'Create'
+                                : 'Update',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType? keyboardType,
+    bool readOnly = false,
+    void Function()? onTap,
+    Widget? suffixIcon,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      readOnly: readOnly,
+      onTap: onTap,
+      decoration: InputDecoration(
+        labelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        labelText: labelText,
+        filled: true,
+        fillColor: Colors.black.withValues(alpha: 0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        suffixIcon: suffixIcon,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter $labelText';
+        }
+        return null;
+      },
     );
   }
 }

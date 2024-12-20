@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:r_and_e_monitor/services/cloud/Employee/create_or_update_employee.dart';
@@ -13,89 +15,151 @@ class EmployeeProfile extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('${employee.name} Profile'),
-        backgroundColor: const Color.fromARGB(255, 75, 153, 255),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.indigo.shade100,
-              child: Text(
-                employee.name[0],
-                style: const TextStyle(
-                    fontSize: 40, color: Color.fromARGB(255, 75, 153, 255)),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
               ),
             ),
-            const SizedBox(height: 20),
-            Text(
-              employee.name,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 75, 153, 255),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              employee.role,
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.indigo.shade300,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Divider(color: Colors.grey.shade400),
-            ListTile(
-              leading: const Icon(Icons.email,
-                  color: Color.fromARGB(255, 75, 153, 255)),
-              title: const Text('Email'),
-              subtitle: Text(employee.email),
-              onTap: () => _sendEmail(employee.email),
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone,
-                  color: Color.fromARGB(255, 75, 153, 255)),
-              title: const Text('Phone Number'),
-              subtitle: Text(employee.phoneNumber),
-              onTap: () => _makePhoneCall(employee.phoneNumber),
-            ),
-            ListTile(
-              leading: const Icon(Icons.attach_money,
-                  color: Color.fromARGB(255, 75, 153, 255)),
-              title: const Text('Salary'),
-              subtitle: Text(_extractSalary(employee.contractInfo)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today,
-                  color: Color.fromARGB(255, 75, 153, 255)),
-              title: const Text('Date Started'),
-              subtitle: Text(_extractContractDate(employee.contractInfo)),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        CreateOrUpdateEmployee(employee: employee),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 75, 153, 255),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Form(
+                child: Column(
+                  children: [
+                    // Enhanced Circle Avatar
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.indigo.shade100,
+                      child: Text(
+                        employee.name[0],
+                        style: const TextStyle(
+                          fontSize: 40,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Name
+                    Text(
+                      employee.name,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Role
+                    Text(
+                      employee.role,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Divider
+                    Divider(color: Colors.grey.shade400),
+
+                    // Profile Info Cards
+                    _buildInfoCard(
+                      icon: Icons.email,
+                      title: 'Email',
+                      content: employee.email,
+                      onTap: () => _sendEmail(employee.email),
+                    ),
+                    _buildInfoCard(
+                      icon: Icons.phone,
+                      title: 'Phone Number',
+                      content: employee.phoneNumber,
+                      onTap: () => _makePhoneCall(employee.phoneNumber),
+                    ),
+                    _buildInfoCard(
+                      icon: Icons.attach_money,
+                      title: 'Salary',
+                      content: _extractSalary(employee.contractInfo),
+                    ),
+                    _buildInfoCard(
+                      icon: Icons.calendar_today,
+                      title: 'Date Started',
+                      content: _extractContractDate(employee.contractInfo),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Edit Button
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CreateOrUpdateEmployee(employee: employee),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                      ),
+                      label: const Text('Edit Profile'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightBlue,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Method to build individual info cards with icons
+  Widget _buildInfoCard({
+    required IconData icon,
+    required String title,
+    required String content,
+    Function()? onTap,
+  }) {
+    return Card(
+      color: Colors.black.withValues(alpha: 0.3),
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.white),
+        title: Text(title,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white)),
+        subtitle: Text(
+          content,
+          style: TextStyle(color: Colors.white),
         ),
+        onTap: onTap,
       ),
     );
   }

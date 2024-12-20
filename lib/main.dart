@@ -47,9 +47,10 @@ class MyApp extends StatelessWidget {
       title: 'Admin Signup Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
+        primarySwatch: Colors.blue,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.deepPurple, // Add header color
+          backgroundColor: Color(0xFF3D5A80),
+          // Add header color
           titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -60,7 +61,7 @@ class MyApp extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.purple, // Button text color
+            backgroundColor: Colors.lightBlue,
             textStyle: const TextStyle(fontSize: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -68,8 +69,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black, fontSize: 16),
-          bodyMedium: TextStyle(color: Colors.black, fontSize: 14),
+          bodyLarge: TextStyle(color: Colors.white, fontSize: 16),
+          bodyMedium: TextStyle(color: Colors.white, fontSize: 14),
           titleLarge: TextStyle(color: Colors.white),
         ),
       ),

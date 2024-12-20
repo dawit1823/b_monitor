@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
 import 'package:r_and_e_monitor/services/cloud/Employee/employee_profile.dart';
 import '../cloud_data_models.dart';
@@ -19,10 +22,19 @@ class EmployeeListView extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/background_dashboard.jpg', // Replace with your image path
-              fit: BoxFit.cover,
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
+              ),
             ),
           ),
           StreamBuilder<Iterable<CloudEmployee>>(
@@ -68,15 +80,18 @@ class EmployeeListView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(15.0),
                         ),
                         elevation: 5.0,
-                        color: Colors.transparent,
+                        color: Colors.white.withValues(alpha: 0.2),
                         margin: const EdgeInsets.symmetric(
                             vertical: 10.0, horizontal: 16.0),
                         child: ExpansionTile(
+                          collapsedIconColor: Colors.white,
+                          iconColor: Colors.lightBlue,
                           title: Text(
                             companyName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18.0,
+                              color: Colors.white,
                             ),
                           ),
                           children: employees.map((employee) {
@@ -95,18 +110,40 @@ class EmployeeListView extends StatelessWidget {
                                   ),
                                 ),
                                 subtitle: Text(employee.role),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            CreateOrUpdateEmployee(
-                                          employee: employee,
-                                        ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.edit,
+                                        color: Colors.lightBlue,
                                       ),
-                                    );
-                                  },
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CreateOrUpdateEmployee(
+                                              employee: employee,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () async {
+                                        final shouldDelete =
+                                            await showDeleteDialog(context);
+                                        if (shouldDelete) {
+                                          await rentService.deleteEmployee(
+                                              id: employee.id);
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                                 onTap: () {
                                   Navigator.of(context).push(
@@ -130,7 +167,11 @@ class EmployeeListView extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.lightBlue,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
         onPressed: () {
           Navigator.of(context).push(
             MaterialPageRoute(

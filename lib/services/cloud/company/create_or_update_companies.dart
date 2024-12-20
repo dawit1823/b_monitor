@@ -1,4 +1,5 @@
-//create_or_update_companies.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import '../../auth/auth_service.dart';
@@ -45,7 +46,6 @@ class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {
   Future<void> _createOrUpdateCompany() async {
     final RentService rentService = RentService();
     if (widget.company == null) {
-      // Create new company
       await rentService.createCompany(
         creatorId: AuthService.firebase().currentUser!.id,
         companyName: _nameController.text,
@@ -55,11 +55,10 @@ class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {
         address: _addressController.text,
       );
     } else {
-      // Update existing company
       await rentService.updateCompany(
         id: widget.company!.id,
         companyName: _nameController.text,
-        companyOwner: _ownerController.text, // Update owner field
+        companyOwner: _ownerController.text,
         companyAddress: _addressController.text,
         companyEmail: _emailController.text,
         companyPhone: _phoneController.text,
@@ -76,83 +75,130 @@ class _CreateOrUpdateCompanyState extends State<CreateOrUpdateCompany> {
 
   @override
   Widget build(BuildContext context) {
+    final isUpdating = widget.company != null;
+
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(widget.company == null ? 'Create Company' : 'Update Company'),
-        backgroundColor: const Color.fromARGB(255, 75, 153, 255),
+        title: Text(isUpdating ? 'Update Company' : 'Create Company'),
+        centerTitle: true,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'assets/bg/background_dashboard.jpg'), // Background image
-            fit: BoxFit.cover,
+      body: Stack(
+        children: [
+          // Background with blur effect
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
+              ),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Company Name',
-                  filled: true,
-                  fillColor: Colors.white70, // Adjust text field background
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _ownerController,
-                decoration: const InputDecoration(
-                  labelText: 'Company Owner',
-                  filled: true,
-                  fillColor: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  filled: true,
-                  fillColor: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone',
-                  filled: true,
-                  fillColor: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address',
-                  filled: true,
-                  fillColor: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _onSubmit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 75, 153, 255),
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 14.0, horizontal: 28.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          isUpdating
+                              ? 'Update Company Details'
+                              : 'Create a New Company',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          controller: _nameController,
+                          labelText: 'Company Name',
+                          icon: Icons.business,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _ownerController,
+                          labelText: 'Company Owner',
+                          icon: Icons.person,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _emailController,
+                          labelText: 'Email Address',
+                          icon: Icons.email,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _phoneController,
+                          labelText: 'Phone',
+                          icon: Icons.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _addressController,
+                          labelText: 'Address',
+                          icon: Icons.location_on,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _onSubmit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightBlue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          child: Text(isUpdating ? 'Update' : 'Create'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                child: Text(widget.company == null ? 'Create' : 'Update'),
               ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelStyle: TextStyle(color: Colors.white),
+        labelText: labelText,
+        prefixIcon: Icon(icon, color: Colors.white),
+        filled: true,
+        fillColor: Colors.black.withValues(alpha: 0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: const BorderSide(color: Colors.black),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: const BorderSide(color: Colors.white, width: 2.0),
         ),
       ),
     );

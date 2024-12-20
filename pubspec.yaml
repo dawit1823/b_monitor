@@ -55,12 +55,12 @@ dependencies:
   syncfusion_flutter_pdf: ^27.1.48
   file_selector: ^1.0.3
   pdf: ^3.11.1
-  flutter_local_notifications: ^17.2.2
   open_file: ^3.5.3
   firebase_auth: ^5.2.0
   sqflite: ^2.3.3+1
   printing: ^5.13.3
   collection: ^1.18.0
+  animated_text_kit: ^4.2.2
   
  
 

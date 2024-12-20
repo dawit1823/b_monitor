@@ -1,5 +1,8 @@
 //create_or_update_rents.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
@@ -71,6 +74,9 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     _initializePayments();
     _updatePropertyIsRented();
   }
+
+  final NumberFormat currencyFormat =
+      NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
   void _filterProperties() {
     filteredProperties = widget.properties.where((property) {
@@ -162,8 +168,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
   }
 
   void _updatePropertyIsRented() {
-    if (selectedEndContractState == 'Contract_Active' ||
-        selectedEndContractState == 'Contract_Prolonged') {
+    if (selectedEndContractState == 'Contract_Active') {
       selectedProperty.isRented = true;
     } else if (selectedEndContractState == 'Contract_Ended') {
       selectedProperty.isRented = false;
@@ -172,7 +177,13 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
 
   Future<void> _saveRent() async {
     if (_formKey.currentState!.validate()) {
-      final rentAmount = double.tryParse(rentAmountController.text) ?? 0.0;
+      // Ensure the 'dueDate' is updated
+      _updateDueDateWithLatestPayment();
+
+      final rentAmount = double.tryParse(rentAmountController.text
+              .replaceAll(RegExp(r'[^\d.]'), '')
+              .toString()) ??
+          0.0;
       final paymentStatus = _generatePaymentStatusString();
 
       _updatePropertyIsRented();
@@ -189,7 +200,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
           contract:
               'Start: ${startDateController.text}, End: ${endDateController.text}',
           rentAmount: rentAmount,
-          dueDate: dueDateController.text,
+          dueDate: dueDateController.text, // Updated here
           endContract: selectedEndContractState,
           paymentStatus: paymentStatus,
         );
@@ -199,7 +210,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
           rentAmount: rentAmount,
           contract:
               'Start: ${startDateController.text}, End: ${endDateController.text}',
-          dueDate: dueDateController.text,
+          dueDate: dueDateController.text, // Updated here
           endContract: selectedEndContractState,
           paymentStatus: paymentStatus,
         );
@@ -222,6 +233,19 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     }
   }
 
+  void _updateDueDateWithLatestPayment() {
+    if (payments.isNotEmpty) {
+      // Extract the latest 'depositedOn' value
+      final latestPayment = payments.last;
+      final latestDepositedOn = latestPayment['depositedOn']?.text ?? '';
+
+      // Update the 'dueDateController' with the latest 'depositedOn' value
+      setState(() {
+        dueDateController.text = latestDepositedOn;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -234,14 +258,20 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'assets/bg/background_dashboard.jpg'), // Replace with your image asset
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
                 fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.3), // Optional tint for better contrast
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(18.0),
             child: Form(
               key: _formKey,
               child: ListView(
@@ -260,11 +290,21 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     items: widget.profiles.map((profile) {
                       return DropdownMenuItem<CloudProfile>(
                         value: profile,
-                        child: Text(profile.companyName),
+                        child: Text(profile.companyName,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            )),
                       );
                     }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'Select Profile'),
+                    decoration: const InputDecoration(
+                      labelText: 'Select Profile',
+                      labelStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   DropdownButtonFormField<CloudProperty>(
                     value: selectedProperty,
@@ -276,33 +316,76 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     items: filteredProperties.map((property) {
                       return DropdownMenuItem<CloudProperty>(
                         value: property,
-                        child: Text(property.propertyNumber),
+                        child: Text(
+                          property.propertyNumber,
+                          selectionColor: Colors.black,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       );
                     }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'Select Property'),
+                    decoration: const InputDecoration(
+                      iconColor: Colors.white,
+                      labelText: 'Select Property',
+                      labelStyle: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                   TextFormField(
                     controller: startDateController,
                     readOnly: true,
-                    decoration: const InputDecoration(labelText: 'Start Date'),
+                    decoration: const InputDecoration(
+                      labelText: 'Start Date',
+                      labelStyle: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
                     onTap: () => _selectDate(context, startDateController),
                   ),
                   TextFormField(
                     controller: endDateController,
                     readOnly: true,
-                    decoration: const InputDecoration(labelText: 'End Date'),
+                    decoration: const InputDecoration(
+                      labelText: 'End Date',
+                      labelStyle: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
                     onTap: () => _selectDate(context, endDateController),
                   ),
                   TextFormField(
                     controller: rentAmountController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Rent Amount'),
+                    decoration: const InputDecoration(
+                      labelText: 'Rent Amount',
+                      labelStyle: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                    onChanged: (value) {
+                      if (value.isNotEmpty) {
+                        double? parsedValue =
+                            double.tryParse(value.replaceAll(',', ''));
+                        if (parsedValue != null) {
+                          setState(() {
+                            rentAmountController.text =
+                                currencyFormat.format(parsedValue).toString();
+                            rentAmountController.selection =
+                                TextSelection.fromPosition(
+                              TextPosition(
+                                  offset: rentAmountController.text.length),
+                            );
+                          });
+                        }
+                      }
+                    },
                   ),
                   TextFormField(
                     controller: dueDateController,
                     readOnly: true,
-                    decoration: const InputDecoration(labelText: 'Due Date'),
+                    decoration: const InputDecoration(
+                      labelText: 'Due Date (optional)',
+                      labelStyle: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
                     onTap: () => _selectDate(context, dueDateController),
                   ),
                   DropdownButtonFormField<String>(
@@ -315,16 +398,26 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     },
                     items: [
                       'Contract_Active',
-                      'Contract_Prolonged',
+                      // 'Contract_Prolonged',
                       'Contract_Ended'
                     ].map((status) {
                       return DropdownMenuItem<String>(
                         value: status,
-                        child: Text(status),
+                        child: Text(status,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            )),
                       );
                     }).toList(),
-                    decoration:
-                        const InputDecoration(labelText: 'End Contract'),
+                    decoration: const InputDecoration(
+                      labelText: 'End Contract',
+                      labelStyle: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   ...payments.asMap().entries.map((entry) {
@@ -340,7 +433,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                             Text(
                               'Payment ${index + 1}',
                               style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             IconButton(
                               onPressed: () => _removePayment(index),
@@ -351,32 +444,46 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                         ),
                         TextFormField(
                           controller: payment['paymentCount'],
-                          decoration:
-                              const InputDecoration(labelText: 'Payment Count'),
+                          decoration: const InputDecoration(
+                            labelStyle:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                            labelText: 'Payment Count',
+                          ),
                         ),
                         TextFormField(
                           controller: payment['advancePayment'],
                           decoration: const InputDecoration(
-                              labelText: 'Advance Payment'),
+                              labelStyle:
+                                  TextStyle(color: Colors.white, fontSize: 18),
+                              labelText: 'Number of months paid'),
                         ),
                         TextFormField(
                           controller: payment['paymentType'],
-                          decoration:
-                              const InputDecoration(labelText: 'Payment Type'),
+                          decoration: const InputDecoration(
+                            labelText: 'Payment Type',
+                            labelStyle:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                          ),
                         ),
                         TextFormField(
                           controller: payment['paymentDate'],
                           readOnly: true,
-                          decoration:
-                              const InputDecoration(labelText: 'Payment Date'),
+                          decoration: const InputDecoration(
+                            labelText: 'Payment Date',
+                            labelStyle:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                          ),
                           onTap: () =>
                               _selectDate(context, payment['paymentDate']!),
                         ),
                         TextFormField(
                           controller: payment['depositedOn'],
                           readOnly: true,
-                          decoration:
-                              const InputDecoration(labelText: 'Next Payment'),
+                          decoration: const InputDecoration(
+                            labelText: 'Next Payment',
+                            labelStyle:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                          ),
                           onTap: () =>
                               _selectDate(context, payment['depositedOn']!),
                         ),
@@ -384,7 +491,29 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                           controller: payment['paymentAmount'],
                           keyboardType: TextInputType.number,
                           decoration: const InputDecoration(
-                              labelText: 'Payment Amount'),
+                            labelText: 'Payment Amount',
+                            labelStyle:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              double? parsedValue =
+                                  double.tryParse(value.replaceAll(',', ''));
+                              if (parsedValue != null) {
+                                setState(() {
+                                  payment['paymentAmount']!.text =
+                                      currencyFormat.format(parsedValue);
+                                  payment['paymentAmount']!.selection =
+                                      TextSelection.fromPosition(
+                                    TextPosition(
+                                        offset: payment['paymentAmount']!
+                                            .text
+                                            .length),
+                                  );
+                                });
+                              }
+                            }
+                          },
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -392,8 +521,16 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                   }),
                   TextButton.icon(
                     onPressed: _addPayment,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Payment'),
+                    icon: const Icon(
+                      Icons.add,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Add Payment',
+                      style: TextStyle(
+                          color: Colors.white,
+                          backgroundColor: Colors.blueGrey),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(

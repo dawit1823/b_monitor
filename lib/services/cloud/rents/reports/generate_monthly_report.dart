@@ -76,6 +76,20 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
               end: DateTime.now()),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: Colors.lightBlue,
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(color: Colors.black),
+            ),
+            datePickerTheme: const DatePickerThemeData(
+              rangePickerBackgroundColor: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (!mounted) return; // Guard against widget dismount
@@ -180,13 +194,13 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
             Navigator.of(context).pop(); // Close the dialog when tapped outside
           },
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             child: GestureDetector(
               onTap: () {}, // Prevent dialog from closing when tapped inside
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(
@@ -212,7 +226,7 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                             Navigator.of(context).pop(); // Close the dialog
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
+                            backgroundColor: Colors.lightBlue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
@@ -265,7 +279,15 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
         }
 
         return DataRow(
-          cells: paddedCells.map((cell) => DataCell(Text(cell))).toList(),
+          cells: paddedCells
+              .map((cell) => DataCell(Text(
+                    cell,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )))
+              .toList(),
         );
       }).toList(),
     );
@@ -284,6 +306,19 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
               child: const Text('Select Date Range'),
             ),
           ),
+          if (selectedDateRange != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'From: '
+                '${selectedDateRange!.start.toLocal().toString().split(' ')[0]} To '
+                '${selectedDateRange!.end.toLocal().toString().split(' ')[0]}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _fetchRentsWithDetails(),
@@ -325,7 +360,9 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                             DataColumn(
                               label: Text(
                                 'No',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             DataColumn(
@@ -393,11 +430,12 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                             rentDetailsList.length,
                             (index) {
                               final rentDetail = rentDetailsList[index];
+                              final profile =
+                                  rentDetail['profile'] as CloudProfile;
                               final rent = rentDetail['rent'] as CloudRent;
                               final property =
                                   rentDetail['property'] as CloudProperty;
-                              final profile =
-                                  rentDetail['profile'] as CloudProfile;
+
                               final firstPaymentDate =
                                   rentDetail['firstPaymentDate'];
                               final lastAdvancePayment =
@@ -418,18 +456,30 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                                   }
                                 },
                                 cells: [
-                                  DataCell(Text((index + 1).toString())),
-                                  DataCell(Text(property.propertyNumber)),
-                                  DataCell(Text(property.floorNumber)),
-                                  DataCell(Text(property.sizeInSquareMeters)),
-                                  DataCell(Text(rent.rentAmount.toString())),
-                                  DataCell(Text(rent.contract)),
                                   DataCell(Text(
-                                      '${profile.firstName} ${profile.lastName}')),
-                                  DataCell(Text(firstPaymentDate)),
-                                  DataCell(Text(lastAdvancePayment)),
-                                  DataCell(Text(rent.dueDate)),
-                                  DataCell(Text(monthsLeft.toString())),
+                                    (index + 1).toString(),
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                      '${profile.companyName} / ${profile.firstName}',
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(property.propertyNumber,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(property.floorNumber)),
+                                  DataCell(Text(property.sizeInSquareMeters,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(rent.rentAmount.toString(),
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(rent.contract,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(firstPaymentDate,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(lastAdvancePayment,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(rent.dueDate,
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(monthsLeft.toString(),
+                                      style: TextStyle(color: Colors.black))),
                                 ],
                               );
                             },
@@ -438,13 +488,15 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                                 cells: [
                                   const DataCell(Text('Total',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.bold))),
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black))),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   DataCell(Text(totalRentAmount.toString(),
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold))),
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black))),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),

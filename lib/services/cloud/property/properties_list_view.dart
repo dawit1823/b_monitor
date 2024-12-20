@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/helper/loading/loading_screen.dart';
 
+import '../../../dashboard/views/utilities/dialogs/delete_dialog.dart';
+
 typedef PropertyCallback = void Function(CloudProperty property);
 
 class PropertyListView extends StatelessWidget {
@@ -103,10 +105,15 @@ class PropertyListTile extends StatelessWidget {
         property.propertyNumber,
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      subtitle:
-          Text('${property.description}.\nType: ${property.propertyType}'),
+      subtitle: Text(
+        '${property.description}.\nType: ${property.propertyType}',
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       trailing: IconButton(
-        icon: const Icon(Icons.delete),
+        icon: const Icon(
+          Icons.delete,
+          color: Colors.red,
+        ),
         onPressed: () async {
           final shouldDelete = await showDeleteDialog(context);
           if (shouldDelete) {
@@ -122,30 +129,4 @@ class PropertyListTile extends StatelessWidget {
       },
     );
   }
-}
-
-Future<bool> showDeleteDialog(BuildContext context) {
-  return showDialog<bool>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Delete'),
-        content: const Text('Are you sure you want to delete this property?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      );
-    },
-  ).then((value) => value ?? false);
 }

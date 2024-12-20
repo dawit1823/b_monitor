@@ -12,43 +12,74 @@ class ExpenseView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder<Iterable<CloudExpenses>>(
-        stream: _rentService.getExpensesByRentIdStream(rentId: rentId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No expenses found'));
-          } else {
-            final expenses = snapshot.data!;
-            return ListView.builder(
-              itemCount: expenses.length,
-              itemBuilder: (context, index) {
-                final expense = expenses.elementAt(index);
-                return ListTile(
-                  title: Text(expense.expenceType),
-                  subtitle: Text(expense.discription),
-                  trailing: Text('\$${expense.amount}'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreateOrUpdateExpense(
-                          expense: expense,
-                          rentId: rentId,
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/bg/background_dashboard.jpg'), // Background image
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: StreamBuilder<Iterable<CloudExpenses>>(
+          stream: _rentService.getExpensesByRentIdStream(rentId: rentId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No expenses found'));
+            } else {
+              final expenses = snapshot.data!;
+              return ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: expenses.length,
+                itemBuilder: (context, index) {
+                  final expense = expenses.elementAt(index);
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    elevation: 4.0,
+                    margin: const EdgeInsets.only(bottom: 16.0),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16.0),
+                      title: Text(
+                        expense.expenceType,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
                         ),
                       ),
-                    );
-                  },
-                );
-              },
-            );
-          }
-        },
+                      subtitle: Text(expense.discription),
+                      trailing: Text(
+                        '\$${expense.amount}',
+                        style: const TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateOrUpdateExpense(
+                              expense: expense,
+                              rentId: rentId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
@@ -59,7 +90,15 @@ class ExpenseView extends StatelessWidget {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        label: const Text(
+          'Add Expense',
+          style: TextStyle(color: Colors.white),
+        ),
+        icon: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        backgroundColor: Colors.lightBlue,
       ),
     );
   }

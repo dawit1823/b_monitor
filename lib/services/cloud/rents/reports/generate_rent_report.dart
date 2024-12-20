@@ -83,12 +83,12 @@ class GenerateRentReport extends StatelessWidget {
           pw.TableHelper.fromTextArray(
             headers: [
               'No',
+              'Profile Name',
               'Property No.',
               'Floor No.',
               'Size (sqm)',
               'Rent Amount/month',
               'Contract',
-              'Profile Name',
               'Payment Date ',
               'Advance Payment',
               'Next Payment',
@@ -118,7 +118,7 @@ class GenerateRentReport extends StatelessWidget {
                   lastAdvancePayment,
                   rent.dueDate,
                   monthsLeft.toString(),
-                  '${profile.firstName} ${profile.lastName}',
+                  '${profile.companyName} / ${profile.firstName}',
                 ];
               },
             ),
@@ -151,13 +151,13 @@ class GenerateRentReport extends StatelessWidget {
             Navigator.of(context).pop(); // Close the dialog when tapped outside
           },
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             child: GestureDetector(
               onTap: () {}, // Prevent dialog from closing when tapped inside
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(
@@ -183,7 +183,7 @@ class GenerateRentReport extends StatelessWidget {
                             Navigator.of(context).pop(); // Close the dialog
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
+                            backgroundColor: Colors.lightBlue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
@@ -236,7 +236,13 @@ class GenerateRentReport extends StatelessWidget {
         }
 
         return DataRow(
-          cells: paddedCells.map((cell) => DataCell(Text(cell))).toList(),
+          cells: paddedCells
+              .map((cell) => DataCell(Text(
+                    cell,
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  )))
+              .toList(),
         );
       }).toList(),
     );
@@ -271,17 +277,17 @@ class GenerateRentReport extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           border: TableBorder.all(
-                            color: Colors.grey, // Border color
+                            color: Colors.black, // Border color
                             width: 1.5, // Border width
                           ),
                           columns: const [
                             DataColumn(label: Text('No')),
+                            DataColumn(label: Text('Profile Name')),
                             DataColumn(label: Text('Property No')),
                             DataColumn(label: Text('Floor No')),
                             DataColumn(label: Text('Size (sqm)')),
                             DataColumn(label: Text('Rent Amount/month')),
                             DataColumn(label: Text('Contract')),
-                            DataColumn(label: Text('Profile Name')),
                             DataColumn(label: Text('Payment Date ')),
                             DataColumn(label: Text('Advance Payment')),
                             DataColumn(label: Text('Next payment')),
@@ -291,11 +297,12 @@ class GenerateRentReport extends StatelessWidget {
                             rentDetailsList.length,
                             (index) {
                               final rentDetail = rentDetailsList[index];
+                              final profile =
+                                  rentDetail['profile'] as CloudProfile;
                               final rent = rentDetail['rent'] as CloudRent;
                               final property =
                                   rentDetail['property'] as CloudProperty;
-                              final profile =
-                                  rentDetail['profile'] as CloudProfile;
+
                               final firstPaymentDate =
                                   rentDetail['firstPaymentDate'];
                               final lastAdvancePayment =
@@ -308,18 +315,47 @@ class GenerateRentReport extends StatelessWidget {
 
                               return DataRow(
                                 cells: [
-                                  DataCell(Text((index + 1).toString())),
-                                  DataCell(Text(property.propertyNumber)),
-                                  DataCell(Text(property.floorNumber)),
-                                  DataCell(Text(property.sizeInSquareMeters)),
-                                  DataCell(Text(rent.rentAmount.toString())),
-                                  DataCell(Text(rent.contract)),
                                   DataCell(Text(
-                                      '${profile.firstName} ${profile.lastName}')),
-                                  DataCell(Text(firstPaymentDate)),
-                                  DataCell(Text(lastAdvancePayment)),
+                                    (index + 1).toString(),
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    '${profile.companyName} / ${profile.firstName}',
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    property.propertyNumber,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    property.floorNumber,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    property.sizeInSquareMeters,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    rent.rentAmount.toString(),
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    rent.contract,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    firstPaymentDate,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
+                                  DataCell(Text(
+                                    lastAdvancePayment,
+                                    style: TextStyle(color: Colors.black),
+                                  )),
                                   DataCell(Text(rent.dueDate)),
-                                  DataCell(Text(monthsLeft.toString())),
+                                  DataCell(Text(
+                                    monthsLeft.toString(),
+                                    style: TextStyle(color: Colors.black),
+                                  )),
                                 ],
                                 onSelectChanged: (selected) {
                                   if (selected == true) {
@@ -339,8 +375,10 @@ class GenerateRentReport extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () async {
                             final companyName = await _fetchCompanyName();
-                            await _generatePdf(
-                                context, rentDetailsList, companyName);
+                            if (context.mounted) {
+                              await _generatePdf(
+                                  context, rentDetailsList, companyName);
+                            }
                           },
                           child: const Text('Generate PDF'),
                         ),
@@ -364,8 +402,15 @@ class GenerateRentReport extends StatelessWidget {
             );
           }
         },
-        icon: const Icon(Icons.report),
-        label: const Text('Monthly Report'),
+        backgroundColor: Colors.lightBlue,
+        icon: const Icon(
+          Icons.report,
+          color: Colors.black,
+        ),
+        label: const Text(
+          'Monthly Report',
+          style: TextStyle(color: Colors.white),
+        ),
         tooltip: 'Generate Monthly Report',
       ),
     );

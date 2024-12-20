@@ -1,3 +1,6 @@
+//rent_penality.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -86,79 +89,96 @@ class _RentPenaltyPageState extends State<RentPenaltyPage> {
                       return const Center(child: Text('Property not found.'));
                     } else {
                       final property = propertySnapshot.data!;
-                      return Container(
-                        decoration: const BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                                'assets/bg/background_dashboard.jpg'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                                elevation: 4.0,
-                                color: Colors.white.withOpacity(0.1),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Profile: ${profile.companyName.isNotEmpty ? profile.companyName : profile.firstName}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16.0,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        'Property: ${property.propertyNumber}\nContract: ${rent.contract}\nDue Date: ${rent.dueDate}\nDays: $daysPassedOrRemaining\nPenalty: \$${penalty.toStringAsFixed(2)}',
-                                        style: TextStyle(
-                                          color: daysPassedOrRemaining
-                                                  .contains('overdue')
-                                              ? Colors.redAccent
-                                              : Colors.black,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                      return Stack(
+                        children: [
+                          Container(
+                            decoration: const BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                    'assets/bg/background_dashboard.jpg'),
+                                fit: BoxFit.cover,
                               ),
-                              const SizedBox(height: 20),
-                              Center(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.purple,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 12),
-                                    textStyle: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            RelatedPenaltiesPage(
-                                                profileId: rent.profileId),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('View Related Penalties'),
-                                ),
+                            ),
+                            child: BackdropFilter(
+                              filter:
+                                  ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                              child: Container(
+                                color: Colors.black.withValues(
+                                    alpha:
+                                        0.2), // Optional tint for better contrast
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    elevation: 4.0,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Profile: ${profile.companyName.isNotEmpty ? profile.companyName : profile.firstName}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16.0,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            'Property: ${property.propertyNumber}\nContract: ${rent.contract}\nDue Date: ${rent.dueDate}\nDays: $daysPassedOrRemaining\nPenalty: \$${penalty.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: daysPassedOrRemaining
+                                                      .contains('overdue')
+                                                  ? const Color.fromARGB(
+                                                      255, 72, 7, 7)
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Center(
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 20, vertical: 12),
+                                        textStyle: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                RelatedPenaltiesPage(
+                                                    profileId: rent.profileId),
+                                          ),
+                                        );
+                                      },
+                                      child:
+                                          const Text('View Related Penalties'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       );
                     }
                   },

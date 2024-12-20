@@ -33,14 +33,16 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.benaber.r_and_e_monitor"
-    
+
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
+
+    
 
     defaultConfig {
         applicationId "com.benaber.r_and_e_monitor"
         minSdkVersion 23 // Increase this to 23 or higher if required
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
@@ -56,7 +58,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 
     sourceSets {
@@ -90,6 +92,6 @@ flutter {
 
 dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
-     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
 }
 

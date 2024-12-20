@@ -1,4 +1,6 @@
 //rent_list.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
@@ -84,7 +86,10 @@ class _RentListState extends State<RentList> {
         title: const Text('Rent List'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
             onPressed: () {
               if (_profiles.isNotEmpty && _properties.isNotEmpty) {
                 Navigator.of(context).push(
@@ -107,11 +112,19 @@ class _RentListState extends State<RentList> {
       ),
       body: Stack(
         children: [
-          // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/background_dashboard.jpg', // Add your image asset path
-              fit: BoxFit.cover,
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
+              ),
             ),
           ),
           // Main Content
@@ -153,7 +166,7 @@ class _RentListState extends State<RentList> {
                         return {
                           'Contract_Ended': [],
                           'Contract_Active': [],
-                          'Contract_Prolonged': [],
+                          //'Contract_Prolonged': [],
                         };
                       })[rent.endContract]!.add(rent);
                     }
@@ -198,15 +211,19 @@ class _RentListState extends State<RentList> {
                                 borderRadius: BorderRadius.circular(15.0),
                               ),
                               elevation: 6.0,
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.transparent.withValues(alpha: 0.2),
                               shadowColor: const Color.fromARGB(255, 0, 0, 0),
                               margin:
                                   const EdgeInsets.symmetric(vertical: 10.0),
                               child: ExpansionTile(
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.1),
+                                collapsedIconColor: Colors.white,
+                                iconColor: Colors.white,
                                 title: Text(
                                   companyName,
                                   style: const TextStyle(
-                                    color: Colors.black,
+                                    color: Colors.white,
                                     fontSize: 18.0,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -222,11 +239,11 @@ class _RentListState extends State<RentList> {
                                     rents: groupedRents['Contract_Active']!,
                                     context: context,
                                   ),
-                                  _buildRentSection(
-                                    title: 'Contract Prolonged',
-                                    rents: groupedRents['Contract_Prolonged']!,
-                                    context: context,
-                                  ),
+                                  // _buildRentSection(
+                                  //   title: 'Contract Prolonged',
+                                  //   rents: groupedRents['Contract_Prolonged']!,
+                                  //   context: context,
+                                  // ),
                                   Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: ElevatedButton.icon(
@@ -239,7 +256,10 @@ class _RentListState extends State<RentList> {
                                           ),
                                         );
                                       },
-                                      icon: const Icon(Icons.insert_chart),
+                                      icon: const Icon(
+                                        Icons.insert_chart,
+                                        color: Colors.white,
+                                      ),
                                       label: const Text('View Rent Report'),
                                       style: ElevatedButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(
@@ -277,26 +297,30 @@ class _RentListState extends State<RentList> {
   }) {
     if (rents.isEmpty) {
       return ListTile(
+        style: ListTileStyle.list,
         title: Text(
           '$title (0)',
           style: const TextStyle(
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
         subtitle: const Text(
           'No rents available in this category.',
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
       );
     }
 
     return ExpansionTile(
+      iconColor: Colors.white,
+      collapsedIconColor: Colors.white,
+      backgroundColor: Colors.white.withValues(alpha: 0.1),
       title: Text(
         '$title (${rents.length})',
         style: const TextStyle(
-          color: Colors.black,
+          color: Colors.white,
         ),
       ),
       children: rents.map((rent) {
@@ -309,20 +333,32 @@ class _RentListState extends State<RentList> {
         );
 
         return ListTile(
+          shape: Border.all(color: Colors.transparent.withValues(alpha: 0.1)),
+          tileColor: Colors.black.withValues(alpha: 0.2),
           title: Text(
             'Property: ${property.propertyNumber}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Profile: ${profile.companyName}'),
-              Text('Contract: ${rent.contract}'),
+              Text(
+                'Profile: ${profile.companyName}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              Text(
+                'Contract: ${rent.contract}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white),
+              ),
             ],
           ),
           isThreeLine: true,
           trailing: PopupMenuButton<String>(
-            color: Colors.white.withOpacity(0.8),
+            iconColor: Colors.white,
+            color: Colors.white,
             onSelected: (value) async {
               if (value == 'View') {
                 Navigator.of(context).push(

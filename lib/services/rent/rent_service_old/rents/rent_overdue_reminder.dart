@@ -1,4 +1,6 @@
 //rent_overdue_reminder.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
 import 'package:r_and_e_monitor/services/auth/auth_service.dart';
@@ -107,10 +109,19 @@ class _RentOverdueReminderState extends State<RentOverdueReminder> {
       body: Stack(
         children: [
           // Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/bg/background_dashboard.jpg', // Add your image asset path here
-              fit: BoxFit.cover,
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
+              ),
             ),
           ),
           // Main Content
@@ -176,10 +187,17 @@ class _RentOverdueReminderState extends State<RentOverdueReminder> {
                             _companyNames[companyId] ?? "Unknown Company";
 
                         return ExpansionTile(
+                          collapsedIconColor: Colors.white,
+                          iconColor: Colors.lightBlue,
+                          collapsedBackgroundColor:
+                              Colors.black.withValues(alpha: 0.1),
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
                           title: Text(
                             'Company: $companyName (${companyRents.length} overdue)',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
+                              fontSize: 16.0,
+                              color: Colors.white,
                             ),
                           ),
                           children: companyRents.map((rent) {
@@ -197,24 +215,44 @@ class _RentOverdueReminderState extends State<RentOverdueReminder> {
 
                             return Card(
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
+                                borderRadius: BorderRadius.circular(14.0),
                               ),
                               elevation: 6.0,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.transparent,
                               margin:
                                   const EdgeInsets.symmetric(vertical: 10.0),
                               child: ListTile(
                                 title: Text(
                                   'Property: ${property.propertyNumber}',
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                      letterSpacing: 1,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Profile: ${profile.companyName}'),
-                                    Text('Email: ${profile.email}'),
-                                    Text('Due Date: $formattedDueDate'),
+                                    Text(
+                                      'Profile: ${profile.companyName}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1),
+                                    ),
+                                    Text(
+                                      'Email: ${profile.email}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1),
+                                    ),
+                                    Text(
+                                      'Due Date: $formattedDueDate',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1),
+                                    ),
                                     Text(
                                       daysRemaining >= 0
                                           ? 'Days remaining: $daysRemaining'
@@ -222,13 +260,17 @@ class _RentOverdueReminderState extends State<RentOverdueReminder> {
                                       style: TextStyle(
                                         color: daysRemaining < 0
                                             ? Colors.red
-                                            : Colors.black,
+                                            : Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
                                 trailing: PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert),
+                                  icon: const Icon(
+                                    Icons.more_vert,
+                                    color: Colors.white,
+                                  ),
                                   onSelected: (value) {
                                     if (value == 'View') {
                                       Navigator.of(context).push(

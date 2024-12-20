@@ -1,4 +1,6 @@
 //related_penalties.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -18,16 +20,23 @@ class RelatedPenaltiesPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Related Penalties'),
-        backgroundColor: Colors.purple,
       ),
       body: Stack(
         children: [
           // Background image
+
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/bg/background_dashboard.jpg'),
                 fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
           ),
@@ -83,14 +92,15 @@ class RelatedPenaltiesPage extends StatelessWidget {
                             ),
                             margin: const EdgeInsets.symmetric(vertical: 10.0),
                             elevation: 4.0,
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.3),
                             child: ListTile(
                               contentPadding: const EdgeInsets.all(16.0),
                               title: Text(
                                 'Contract: ${rent.contract}',
                                 style: const TextStyle(
                                   color: Colors.black,
-                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
                                 ),
                               ),
                               subtitle: Text(
@@ -99,7 +109,8 @@ class RelatedPenaltiesPage extends StatelessWidget {
                                 'Days: $daysPassedOrRemaining\n'
                                 'Penalty: \$${penalty.toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
                                   color: Colors.black,
                                 ),
                               ),
