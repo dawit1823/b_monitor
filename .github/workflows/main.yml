@@ -42,4 +42,4 @@ jobs:
           artifacts: build/app/outputs/flutter-apk/app-release.apk
           tag: v${{ github.run_number }} # Use the workflow run number for dynamic versioning
           name: Release v${{ github.run_number }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN.TOKEN }}
