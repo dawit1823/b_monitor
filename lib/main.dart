@@ -1,6 +1,7 @@
 //main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart';
 import 'package:r_and_e_monitor/dashboard/admin/dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/employee/accountant_dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
@@ -17,6 +18,7 @@ import 'package:r_and_e_monitor/services/auth/firebase_auth_provider.dart';
 import 'package:r_and_e_monitor/services/helper/loading/loading_screen.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/user_checker.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
+
 import 'package:r_and_e_monitor/services/property_mangement/new/create_or_update_properties.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/create_or_update_profile.dart';
 
@@ -43,6 +45,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return MaterialApp(
       title: 'Admin Signup Demo',
       debugShowCheckedModeBanner: false,
