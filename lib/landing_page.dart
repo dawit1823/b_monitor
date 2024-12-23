@@ -146,7 +146,7 @@ class _LandingPageState extends State<LandingPage>
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white..withValues(alpha: 0.2),
+              backgroundColor: Colors.black.withValues(alpha: 0.2),
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 0,
               shape: RoundedRectangleBorder(
