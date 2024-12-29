@@ -9,7 +9,7 @@ import 'package:open_file_plus/open_file_plus.dart'; // For opening files
 class UpdateHelper {
   static const String githubApiUrl =
       "https://api.github.com/repos/dawit1823/b_monitor/releases/latest";
-  static const String currentVersion = "v11";
+  static const String currentVersion = "v14";
 
   bool _isDialogOpen = false;
 
@@ -83,7 +83,11 @@ class UpdateHelper {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(width: 20),
-                  Expanded(child: Text(message)),
+                  Expanded(
+                      child: Text(
+                    message,
+                    style: TextStyle(color: Colors.black),
+                  )),
                 ],
               ),
             );
@@ -107,9 +111,15 @@ class UpdateHelper {
               return AlertDialog(
                 content: Row(
                   children: [
-                    const CircularProgressIndicator(),
+                    // const CircularProgressIndicator(),
                     const SizedBox(width: 20),
-                    Expanded(child: Text(message)),
+                    Expanded(
+                        child: Text(
+                      message,
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                    )),
                   ],
                 ),
               );
@@ -203,8 +213,14 @@ class UpdateHelper {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: Text("Error"),
-          content: Text(message),
+          title: Text(
+            "Error",
+            style: TextStyle(color: Colors.black),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: Colors.black),
+          ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context), child: Text("OK"))
@@ -227,9 +243,14 @@ class UpdateHelper {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: Text("Download Complete"),
+          title: Text(
+            "Download Complete",
+            style: TextStyle(color: Colors.black),
+          ),
           content: Text(
-              "The update has been downloaded to $filePath. Open your file manager and install it manually."),
+            "The update has been downloaded to $filePath. Open your file manager and install it manually.",
+            style: TextStyle(color: Colors.black),
+          ),
           actions: [
             ElevatedButton(
                 onPressed: () => Navigator.pop(context), child: Text("OK"))
