@@ -21,6 +21,8 @@ class _ProfileViewState extends State<ProfileView> {
   late final RentService _rentService;
   String get userId => AuthService.firebase().currentUser!.id;
 
+  String searchText = "";
+
   @override
   void initState() {
     _rentService = RentService();
@@ -57,69 +59,110 @@ class _ProfileViewState extends State<ProfileView> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
               child: Container(
-                color: Colors.black.withValues(
-                    alpha: 0.3), // Optional tint for better contrast
+                color: Colors.black.withValues(alpha: 0.3),
               ),
             ),
           ),
-          StreamBuilder(
-            stream: _rentService.allProfiles(creatorId: userId),
-            builder: (context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.waiting:
-                case ConnectionState.active:
-                  if (snapshot.hasData) {
-                    final allProfiles = snapshot.data as Iterable<CloudProfile>;
-                    final profilesByCompanyId =
-                        _groupProfilesByCompanyId(allProfiles);
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchText = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search profiles...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Colors.white),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder(
+                  stream: _rentService.allProfiles(creatorId: userId),
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                      case ConnectionState.active:
+                        if (snapshot.hasData) {
+                          final allProfiles =
+                              snapshot.data as Iterable<CloudProfile>;
+                          final filteredProfiles = allProfiles
+                              .where((profile) =>
+                                  profile.firstName
+                                      .toLowerCase()
+                                      .contains(searchText) ||
+                                  profile.companyName
+                                      .toLowerCase()
+                                      .contains(searchText))
+                              .toList();
+                          final profilesByCompanyId =
+                              _groupProfilesByCompanyId(filteredProfiles);
 
-                    return FutureBuilder<Map<String, String>>(
-                      future:
-                          _getCompanyNames(profilesByCompanyId.keys.toList()),
-                      builder: (context, companyNamesSnapshot) {
-                        if (companyNamesSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        if (companyNamesSnapshot.hasData) {
-                          final companyNames = companyNamesSnapshot.data!;
-                          return ProfilesListView(
-                            groupedProfiles: profilesByCompanyId,
-                            companyNames: companyNames,
-                            onDeleteProfile: (profile) async {
-                              await _rentService.deleteProfile(id: profile.id);
-                            },
-                            onTap: (profile) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ReadProfile(profile: profile),
-                                ),
-                              );
-                            },
-                            onLongPress: (profile) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CreateOrUpdateProfile(profile: profile),
-                                ),
-                              );
+                          return FutureBuilder<Map<String, String>>(
+                            future: _getCompanyNames(
+                                profilesByCompanyId.keys.toList()),
+                            builder: (context, companyNamesSnapshot) {
+                              if (companyNamesSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (companyNamesSnapshot.hasData) {
+                                final companyNames = companyNamesSnapshot.data!;
+                                return ProfilesListView(
+                                  groupedProfiles: profilesByCompanyId,
+                                  companyNames: companyNames,
+                                  onDeleteProfile: (profile) async {
+                                    await _rentService.deleteProfile(
+                                        id: profile.id);
+                                  },
+                                  onTap: (profile) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ReadProfile(profile: profile),
+                                      ),
+                                    );
+                                  },
+                                  onLongPress: (profile) {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CreateOrUpdateProfile(
+                                                profile: profile),
+                                      ),
+                                    );
+                                  },
+                                );
+                              } else {
+                                return const Center(
+                                    child: Text('Error loading company names'));
+                              }
                             },
                           );
                         } else {
-                          return const Center(
-                              child: Text('Error loading company names'));
+                          return const Center(child: Text('No profiles found'));
                         }
-                      },
-                    );
-                  } else {
-                    return const Center(child: Text('No profiles found'));
-                  }
-                default:
-                  return const Center(child: Text('Error loading profiles'));
-              }
-            },
+                      default:
+                        return const Center(
+                            child: Text('Error loading profiles'));
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

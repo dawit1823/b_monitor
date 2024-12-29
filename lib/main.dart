@@ -1,7 +1,6 @@
 //main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:path/path.dart';
 import 'package:r_and_e_monitor/dashboard/admin/dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/employee/accountant_dashboard.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
@@ -45,7 +44,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    checkForUpdate(context);
     return MaterialApp(
       title: 'Admin Signup Demo',
       debugShowCheckedModeBanner: false,
@@ -104,8 +102,24 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final UpdateHelper _updateHelper = UpdateHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    // Schedule the update check after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateHelper.checkForUpdate(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

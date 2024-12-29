@@ -1,6 +1,4 @@
-//rent_list.dart
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.dart';
@@ -26,6 +24,7 @@ class _RentListState extends State<RentList> {
   List<CloudProfile> _profiles = [];
   List<CloudProperty> _properties = [];
   bool _isInitialized = false;
+  String _searchQuery = '';
 
   String get userId => AuthService.firebase().currentUser!.id;
 
@@ -65,6 +64,12 @@ class _RentListState extends State<RentList> {
     }
   }
 
+  void _updateSearchQuery(String query) {
+    setState(() {
+      _searchQuery = query.toLowerCase();
+    });
+  }
+
   Future<Map<String, String>> _fetchCompanyNames(
       List<String> companyIds) async {
     final Map<String, String> companyNames = {};
@@ -77,6 +82,23 @@ class _RentListState extends State<RentList> {
       }
     }
     return companyNames;
+  }
+
+  List<CloudRent> _filterRents(Iterable<CloudRent> allRents) {
+    if (_searchQuery.isEmpty) {
+      return allRents.toList();
+    }
+
+    return allRents.where((rent) {
+      final profile = _profiles.firstWhere(
+        (prof) => prof.id == rent.profileId,
+      );
+      final property = _properties.firstWhere(
+        (prop) => prop.id == rent.propertyId,
+      );
+      return profile.companyName.toLowerCase().contains(_searchQuery) ||
+          property.propertyNumber.contains(_searchQuery);
+    }).toList();
   }
 
   @override
@@ -122,169 +144,203 @@ class _RentListState extends State<RentList> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
               child: Container(
-                color: Colors.black.withValues(
-                    alpha: 0.2), // Optional tint for better contrast
+                color: Colors.black
+                    .withAlpha(50), // Optional tint for better contrast
               ),
             ),
           ),
-          // Main Content
-          _isInitialized
-              ? StreamBuilder<Iterable<CloudRent>>(
-                  stream: _rentService.allRents(creatorId: userId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      LoadingScreen().show(
-                        context: context,
-                        text: 'Loading rents...',
-                      );
-                      return Container();
-                    } else {
-                      LoadingScreen().hide();
-                    }
+          // Search Bar
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  onChanged: _updateSearchQuery,
+                  decoration: InputDecoration(
+                    labelText: 'Search by Property or Profile Name',
+                    labelStyle: TextStyle(
+                      color: Colors.black,
+                      // fontWeight: FontWeight.bold,
+                    ),
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Colors.white),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+              // Main Content
+              _isInitialized
+                  ? Expanded(
+                      child: StreamBuilder<Iterable<CloudRent>>(
+                        stream: _rentService.allRents(creatorId: userId),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            LoadingScreen().show(
+                              context: context,
+                              text: 'Loading rents...',
+                            );
+                            return Container();
+                          } else {
+                            LoadingScreen().hide();
+                          }
 
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error loading rents: ${snapshot.error}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(
-                        child: Text('No rents available.'),
-                      );
-                    }
-
-                    final allRents = snapshot.data!;
-                    final rentsByCompany =
-                        <String, Map<String, List<CloudRent>>>{};
-
-                    for (var rent in allRents) {
-                      rentsByCompany.putIfAbsent(rent.companyId, () {
-                        return {
-                          'Contract_Ended': [],
-                          'Contract_Active': [],
-                          //'Contract_Prolonged': [],
-                        };
-                      })[rent.endContract]!.add(rent);
-                    }
-
-                    return FutureBuilder<Map<String, String>>(
-                      future: _fetchCompanyNames(rentsByCompany.keys.toList()),
-                      builder: (context, companySnapshot) {
-                        if (companySnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          LoadingScreen().show(
-                            context: context,
-                            text: 'Loading company names...',
-                          );
-                          return Container();
-                        } else {
-                          LoadingScreen().hide();
-                        }
-
-                        if (companySnapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Error loading company names: ${companySnapshot.error}',
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          );
-                        }
-
-                        final companyNames = companySnapshot.data!;
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.all(8.0),
-                          itemCount: rentsByCompany.length,
-                          itemBuilder: (context, index) {
-                            final companyId =
-                                rentsByCompany.keys.elementAt(index);
-                            final companyName =
-                                companyNames[companyId] ?? 'Unknown Company';
-                            final groupedRents = rentsByCompany[companyId]!;
-
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
-                              ),
-                              elevation: 6.0,
-                              color: Colors.transparent.withValues(alpha: 0.2),
-                              shadowColor: const Color.fromARGB(255, 0, 0, 0),
-                              margin:
-                                  const EdgeInsets.symmetric(vertical: 10.0),
-                              child: ExpansionTile(
-                                backgroundColor:
-                                    Colors.white.withValues(alpha: 0.1),
-                                collapsedIconColor: Colors.white,
-                                iconColor: Colors.white,
-                                title: Text(
-                                  companyName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                children: [
-                                  _buildRentSection(
-                                    title: 'Contract Ended',
-                                    rents: groupedRents['Contract_Ended']!,
-                                    context: context,
-                                  ),
-                                  _buildRentSection(
-                                    title: 'Contract Active',
-                                    rents: groupedRents['Contract_Active']!,
-                                    context: context,
-                                  ),
-                                  // _buildRentSection(
-                                  //   title: 'Contract Prolonged',
-                                  //   rents: groupedRents['Contract_Prolonged']!,
-                                  //   context: context,
-                                  // ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                GenerateRentReport(
-                                                    companyId: companyId),
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(
-                                        Icons.insert_chart,
-                                        color: Colors.white,
-                                      ),
-                                      label: const Text('View Rent Report'),
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12.0,
-                                          horizontal: 20.0,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Error loading rents: ${snapshot.error}',
+                                style: const TextStyle(color: Colors.red),
                               ),
                             );
-                          },
-                        );
-                      },
-                    );
-                  },
-                )
-              : const Center(
-                  child: Text('Initializing...'),
-                ),
+                          }
+
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            return const Center(
+                              child: Text('No rents available.'),
+                            );
+                          }
+
+                          final allRents = snapshot.data!;
+                          final filteredRents = _filterRents(allRents);
+
+                          final rentsByCompany =
+                              <String, Map<String, List<CloudRent>>>{};
+
+                          for (var rent in filteredRents) {
+                            rentsByCompany.putIfAbsent(rent.companyId, () {
+                              return {
+                                'Contract_Ended': [],
+                                'Contract_Active': [],
+                              };
+                            })[rent.endContract]!.add(rent);
+                          }
+
+                          return FutureBuilder<Map<String, String>>(
+                            future: _fetchCompanyNames(
+                                rentsByCompany.keys.toList()),
+                            builder: (context, companySnapshot) {
+                              if (companySnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                LoadingScreen().show(
+                                  context: context,
+                                  text: 'Loading company names...',
+                                );
+                                return Container();
+                              } else {
+                                LoadingScreen().hide();
+                              }
+
+                              if (companySnapshot.hasError) {
+                                return Center(
+                                  child: Text(
+                                    'Error loading company names: ${companySnapshot.error}',
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                );
+                              }
+
+                              final companyNames = companySnapshot.data!;
+
+                              return ListView.builder(
+                                padding: const EdgeInsets.all(8.0),
+                                itemCount: rentsByCompany.length,
+                                itemBuilder: (context, index) {
+                                  final companyId =
+                                      rentsByCompany.keys.elementAt(index);
+                                  final companyName = companyNames[companyId] ??
+                                      'Unknown Company';
+                                  final groupedRents =
+                                      rentsByCompany[companyId]!;
+
+                                  return Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15.0),
+                                    ),
+                                    elevation: 6.0,
+                                    color: Colors.transparent.withAlpha(50),
+                                    shadowColor:
+                                        const Color.fromARGB(255, 0, 0, 0),
+                                    margin: const EdgeInsets.symmetric(
+                                        vertical: 10.0),
+                                    child: ExpansionTile(
+                                      backgroundColor:
+                                          Colors.white.withAlpha(25),
+                                      collapsedIconColor: Colors.white,
+                                      iconColor: Colors.white,
+                                      title: Text(
+                                        companyName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18.0,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      children: [
+                                        _buildRentSection(
+                                          title: 'Contract Ended',
+                                          rents: _filterRents(
+                                              groupedRents['Contract_Ended']!),
+                                          context: context,
+                                        ),
+                                        _buildRentSection(
+                                          title: 'Contract Active',
+                                          rents: _filterRents(
+                                              groupedRents['Contract_Active']!),
+                                          context: context,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      GenerateRentReport(
+                                                          companyId: companyId),
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.insert_chart,
+                                              color: Colors.white,
+                                            ),
+                                            label:
+                                                const Text('View Rent Report'),
+                                            style: ElevatedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 12.0,
+                                                horizontal: 20.0,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10.0),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    )
+                  : const Center(
+                      child: Text('Initializing...'),
+                    ),
+            ],
+          ),
         ],
       ),
     );
@@ -316,7 +372,7 @@ class _RentListState extends State<RentList> {
     return ExpansionTile(
       iconColor: Colors.white,
       collapsedIconColor: Colors.white,
-      backgroundColor: Colors.white.withValues(alpha: 0.1),
+      backgroundColor: Colors.white.withAlpha(25),
       title: Text(
         '$title (${rents.length})',
         style: const TextStyle(
@@ -327,14 +383,13 @@ class _RentListState extends State<RentList> {
         final property = _properties.firstWhere(
           (prop) => prop.id == rent.propertyId,
         );
-
         final profile = _profiles.firstWhere(
           (prof) => prof.id == rent.profileId,
         );
 
         return ListTile(
-          shape: Border.all(color: Colors.transparent.withValues(alpha: 0.1)),
-          tileColor: Colors.black.withValues(alpha: 0.2),
+          shape: Border.all(color: Colors.transparent.withAlpha(25)),
+          tileColor: Colors.black.withAlpha(50),
           title: Text(
             'Property: ${property.propertyNumber}',
             style: const TextStyle(

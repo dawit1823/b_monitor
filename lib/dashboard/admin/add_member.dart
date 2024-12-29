@@ -21,10 +21,10 @@ class _AddMemberPageState extends State<AddMemberPage> {
   String? _selectedRole;
   final List<String> _roles = [
     'accountant',
-    'secretary',
-    'manager',
-    'Security',
-    'others'
+    // 'secretary',
+    // 'manager',
+    // 'Security',
+    // 'others'
   ];
 
   @override
@@ -93,7 +93,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   ),
                   decoration: InputDecoration(
                     iconColor: Colors.white,
-                    labelStyle: TextStyle(color: Colors.white),
+                    labelStyle: TextStyle(color: Colors.black),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.1),
                     border: OutlineInputBorder(
@@ -110,7 +110,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                       value: value,
                       child: Text(
                         value,
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.black),
                       ),
                     );
                   }).toList(),

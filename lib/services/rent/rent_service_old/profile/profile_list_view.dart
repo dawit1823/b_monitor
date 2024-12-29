@@ -1,3 +1,4 @@
+//profile_list_view.dart
 import 'package:flutter/material.dart';
 import '../../../../dashboard/views/utilities/dialogs/delete_dialog.dart';
 import '../../../cloud/cloud_data_models.dart';
@@ -34,6 +35,7 @@ class ProfilesListView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
           elevation: 0,
           child: ExpansionTile(
+            collapsedIconColor: Colors.white,
             iconColor: Colors.lightBlue,
             tilePadding: const EdgeInsets.all(8.0),
             title: Text(

@@ -191,6 +191,7 @@ class _CreateOrUpdateFinancialManagementState
                       shrinkWrap: true,
                       children: <Widget>[
                         DropdownButtonFormField<CloudCompany>(
+                          dropdownColor: Colors.black.withValues(alpha: 0.8),
                           value: selectedCompany,
                           onChanged: (value) {
                             setState(() {

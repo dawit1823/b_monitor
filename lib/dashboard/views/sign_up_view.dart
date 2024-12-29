@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:r_and_e_monitor/dashboard/views/constants/routes.dart';
@@ -61,9 +63,14 @@ class _AdminSignUpViewState extends State<AdminSignUpView> {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'assets/bg/background_dashboard.jpg'), // Add your background image path here
+                image: AssetImage('assets/bg/background_dashboard.jpg'),
                 fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.3),
               ),
             ),
           ),

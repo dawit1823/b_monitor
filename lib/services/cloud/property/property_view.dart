@@ -22,10 +22,20 @@ class _PropertyViewState extends State<PropertyView> {
   late final RentService _rentService;
   String get userId => AuthService.firebase().currentUser!.id;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     _propertyService = PropertyService();
     _rentService = RentService();
+
+    // Add a listener to update the search query state
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
     super.initState();
   }
 
@@ -61,89 +71,131 @@ class _PropertyViewState extends State<PropertyView> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
               child: Container(
-                color: Colors.black.withValues(
-                    alpha: 0.3), // Optional tint for better contrast
+                color: Colors.black.withValues(alpha: 0.3),
               ),
             ),
           ),
-          StreamBuilder(
-            stream: _propertyService.allProperties(creatorId: userId),
-            builder: (context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.waiting:
-                  return const Center(child: CircularProgressIndicator());
-                case ConnectionState.active:
-                  if (snapshot.hasData) {
-                    final allProperties = snapshot.data!;
-                    final propertiesByCompanyId =
-                        _groupPropertiesByCompanyId(allProperties);
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search properties...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide: const BorderSide(color: Colors.white),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder(
+                  stream: _propertyService.allProperties(creatorId: userId),
+                  builder: (context, snapshot) {
+                    switch (snapshot.connectionState) {
+                      case ConnectionState.waiting:
+                        return const Center(child: CircularProgressIndicator());
+                      case ConnectionState.active:
+                        if (snapshot.hasData) {
+                          final allProperties = snapshot.data!;
+                          final filteredProperties =
+                              allProperties.where((property) {
+                            return property.propertyNumber
+                                    .toLowerCase()
+                                    .contains(_searchQuery) ||
+                                property.description
+                                    .toLowerCase()
+                                    .contains(_searchQuery) ||
+                                property.propertyType
+                                    .toLowerCase()
+                                    .contains(_searchQuery);
+                          }).toList();
+                          final propertiesByCompanyId =
+                              _groupPropertiesByCompanyId(filteredProperties);
 
-                    return FutureBuilder<Map<String, String>>(
-                      future:
-                          _getCompanyNames(propertiesByCompanyId.keys.toList()),
-                      builder: (context, companyNamesSnapshot) {
-                        if (companyNamesSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        if (companyNamesSnapshot.hasData) {
-                          final companyNames = companyNamesSnapshot.data!;
-                          return ListView.builder(
-                            itemCount: propertiesByCompanyId.length,
-                            itemBuilder: (context, companyIndex) {
-                              final companyId = propertiesByCompanyId.keys
-                                  .elementAt(companyIndex);
-                              final propertiesByRentalStatus =
-                                  propertiesByCompanyId[companyId]!;
-                              final companyName =
-                                  companyNames[companyId] ?? 'Unknown';
+                          return FutureBuilder<Map<String, String>>(
+                            future: _getCompanyNames(
+                                propertiesByCompanyId.keys.toList()),
+                            builder: (context, companyNamesSnapshot) {
+                              if (companyNamesSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (companyNamesSnapshot.hasData) {
+                                final companyNames = companyNamesSnapshot.data!;
+                                return ListView.builder(
+                                  itemCount: propertiesByCompanyId.length,
+                                  itemBuilder: (context, companyIndex) {
+                                    final companyId = propertiesByCompanyId.keys
+                                        .elementAt(companyIndex);
+                                    final propertiesByRentalStatus =
+                                        propertiesByCompanyId[companyId]!;
+                                    final companyName =
+                                        companyNames[companyId] ?? 'Unknown';
 
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                color: Colors.transparent,
-                                elevation: 6.0,
-                                margin: const EdgeInsets.symmetric(
-                                    vertical: 10.0, horizontal: 16.0),
-                                child: ExpansionTile(
-                                  collapsedIconColor: Colors.white,
-                                  iconColor: Colors.lightBlue,
-                                  title: Text(
-                                    'Company: $companyName',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18.0,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  children: [
-                                    for (var rentalStatus in [true, false])
-                                      _buildRentalStatusSection(
-                                        rentalStatus,
-                                        propertiesByRentalStatus[
-                                                rentalStatus] ??
-                                            [],
-                                        companyName,
+                                    return Card(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(15.0),
                                       ),
-                                  ],
-                                ),
-                              );
+                                      color: Colors.transparent,
+                                      elevation: 6.0,
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 10.0, horizontal: 16.0),
+                                      child: ExpansionTile(
+                                        collapsedIconColor: Colors.white,
+                                        iconColor: Colors.lightBlue,
+                                        title: Text(
+                                          'Company: $companyName',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18.0,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        children: [
+                                          for (var rentalStatus in [
+                                            true,
+                                            false
+                                          ])
+                                            _buildRentalStatusSection(
+                                              rentalStatus,
+                                              propertiesByRentalStatus[
+                                                      rentalStatus] ??
+                                                  [],
+                                              companyName,
+                                            ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              }
+                              return const Center(
+                                  child: Text('Error loading company names'));
                             },
                           );
+                        } else {
+                          return const Center(
+                              child: Text('No properties found'));
                         }
+                      default:
                         return const Center(
-                            child: Text('Error loading company names'));
-                      },
-                    );
-                  } else {
-                    return const Center(child: Text('No properties found'));
-                  }
-                default:
-                  return const Center(child: Text('Error loading properties'));
-              }
-            },
+                            child: Text('Error loading properties'));
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
