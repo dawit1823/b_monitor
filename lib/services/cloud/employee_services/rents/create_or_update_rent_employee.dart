@@ -83,12 +83,27 @@ class _CreateOrUpdateRentEmployeeViewState
     dueDateController = TextEditingController(text: widget.rent?.dueDate ?? '');
     selectedEndContractState = widget.rent?.endContract ?? 'Contract_Ended';
 
+    _setContractStateBasedOnEndDate();
     _initializePayments();
     _updatePropertyIsRented();
   }
 
   final NumberFormat currencyFormat =
       NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+
+  void _setContractStateBasedOnEndDate() {
+    if (endDateController.text.isNotEmpty) {
+      DateTime? endDate = DateTime.tryParse(endDateController.text);
+      if (endDate != null) {
+        setState(() {
+          selectedEndContractState = endDate.isBefore(DateTime.now())
+              ? 'Contract_Ended'
+              : 'Contract_Active';
+        });
+      }
+    }
+  }
+
   void _filterProperties() {
     filteredProperties = widget.properties.where((property) {
       if (widget.rent != null && property.id == widget.rent!.propertyId) {
@@ -365,7 +380,10 @@ class _CreateOrUpdateRentEmployeeViewState
                       labelText: 'End Date',
                       labelStyle: TextStyle(color: Colors.white, fontSize: 18),
                     ),
-                    onTap: () => _selectDate(context, endDateController),
+                    onTap: () async {
+                      await _selectDate(context, endDateController);
+                      _setContractStateBasedOnEndDate(); // Update state after selecting date
+                    },
                   ),
                   TextFormField(
                     controller: rentAmountController,
@@ -406,25 +424,18 @@ class _CreateOrUpdateRentEmployeeViewState
                     onChanged: (value) {
                       setState(() {
                         selectedEndContractState = value!;
+                        _updatePropertyIsRented();
                       });
                     },
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Contract_Active',
-                        child: Text('Contract Active'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Contract_Ended',
-                        child: Text('Contract Ended'),
-                      ),
-                    ],
+                    items: ['Contract_Ended', 'Contract_Active'].map((state) {
+                      return DropdownMenuItem<String>(
+                        value: state,
+                        child: Text(state),
+                      );
+                    }).toList(),
                     decoration: const InputDecoration(
-                      labelText: 'End Contract',
-                      labelStyle: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      labelText: 'Contract State',
+                      labelStyle: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
                   const SizedBox(height: 16),

@@ -93,7 +93,7 @@ class _NewPropertyViewState extends State<NewPropertyView> {
       final userId = currentUser.id;
 
       final propertyType = _propertyTypeController.text;
-      final numberOfFloors = int.parse(_numberOfFloorsController.text);
+      final numberOfFloors = _numberOfFloorsController.text;
       final propertyNumber = _propertyNumberController.text;
       final sizeInSquareMeters = double.parse(_sizeController.text);
       final pricePerMonth = double.parse(_priceController.text);
@@ -212,8 +212,10 @@ class _NewPropertyViewState extends State<NewPropertyView> {
                     const SizedBox(height: 10),
                     _buildTextField(_propertyTypeController, 'Property Type'),
                     const SizedBox(height: 10),
-                    _buildTextField(_numberOfFloorsController, 'Floor Number',
-                        isNumeric: true),
+                    _buildTextField(
+                      _numberOfFloorsController,
+                      'Floor Number',
+                    ),
                     const SizedBox(height: 10),
                     _buildTextField(
                         _propertyNumberController, 'Property Number'),

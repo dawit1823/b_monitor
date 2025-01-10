@@ -72,6 +72,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     selectedEndContractState = widget.rent?.endContract ?? 'Contract_Ended';
 
     _initializePayments();
+    _updateEndContractState();
     _updatePropertyIsRented();
   }
 
@@ -143,6 +144,19 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     setState(() {});
   }
 
+  void _updateEndContractState() {
+    if (endDateController.text.isNotEmpty) {
+      final endDate = DateTime.tryParse(endDateController.text);
+      if (endDate != null) {
+        setState(() {
+          selectedEndContractState = endDate.isBefore(DateTime.now())
+              ? 'Contract_Ended'
+              : 'Contract_Active';
+        });
+      }
+    }
+  }
+
   Future<void> _selectDate(
       BuildContext context, TextEditingController controller) async {
     DateTime? pickedDate = await showDatePicker(
@@ -158,6 +172,10 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
       setState(() {
         controller.text = formattedDate;
       });
+
+      if (controller == endDateController) {
+        _updateEndContractState();
+      }
     }
   }
 

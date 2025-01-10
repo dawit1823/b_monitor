@@ -180,8 +180,12 @@ class _ProfileViewState extends State<ProfileView> {
 
   Map<String, List<CloudProfile>> _groupProfilesByCompanyId(
       Iterable<CloudProfile> profiles) {
+    // Sort profiles by companyName alphabetically
+    final sortedProfiles = profiles.toList()
+      ..sort((a, b) => a.companyName.compareTo(b.companyName));
+
     final Map<String, List<CloudProfile>> groupedProfiles = {};
-    for (var profile in profiles) {
+    for (var profile in sortedProfiles) {
       if (!groupedProfiles.containsKey(profile.companyId)) {
         groupedProfiles[profile.companyId] = [];
       }

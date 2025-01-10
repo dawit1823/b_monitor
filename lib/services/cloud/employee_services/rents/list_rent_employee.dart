@@ -24,6 +24,7 @@ class ListRentEmployee extends StatefulWidget {
 }
 
 class _ListRentEmployeeState extends State<ListRentEmployee> {
+  String? _sortCriterion;
   late final RentService _rentService;
   late final PropertyService _propertyService;
   List<CloudProfile> _profiles = [];
@@ -36,6 +37,40 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
     _rentService = RentService();
     _propertyService = PropertyService();
     _initializeData();
+  }
+
+  void _sortRents(List<CloudRent> rents) {
+    switch (_sortCriterion) {
+      case 'Floor Number':
+        rents.sort((a, b) {
+          final propertyA = _properties.firstWhere((p) => p.id == a.propertyId);
+          final propertyB = _properties.firstWhere((p) => p.id == b.propertyId);
+          return propertyA.floorNumber.compareTo(propertyB.floorNumber);
+        });
+        break;
+      case 'Property Number':
+        rents.sort((a, b) {
+          final propertyA = _properties.firstWhere((p) => p.id == a.propertyId);
+          final propertyB = _properties.firstWhere((p) => p.id == b.propertyId);
+          return propertyA.propertyNumber.compareTo(propertyB.propertyNumber);
+        });
+        break;
+      case 'Company Name':
+        rents.sort((a, b) {
+          final profileA = _profiles.firstWhere((p) => p.id == a.profileId);
+          final profileB = _profiles.firstWhere((p) => p.id == b.profileId);
+          return profileA.companyName.compareTo(profileB.companyName);
+        });
+        break;
+      case 'Size (sqm)':
+        rents.sort((a, b) {
+          final propertyA = _properties.firstWhere((p) => p.id == a.propertyId);
+          final propertyB = _properties.firstWhere((p) => p.id == b.propertyId);
+          return propertyA.sizeInSquareMeters
+              .compareTo(propertyB.sizeInSquareMeters);
+        });
+        break;
+    }
   }
 
   Future<void> _initializeData() async {
@@ -166,7 +201,6 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
                         return {
                           'Contract_Ended': [],
                           'Contract_Active': [],
-                          'Contract_Prolonged': [],
                         };
                       })[rent.endContract]!.add(rent);
                     }
@@ -216,13 +250,47 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
                               margin:
                                   const EdgeInsets.symmetric(vertical: 10.0),
                               child: ExpansionTile(
-                                title: Text(
-                                  companyName,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                title: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      companyName,
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(Icons.sort,
+                                          color: Colors.black),
+                                      onSelected: (value) {
+                                        setState(() {
+                                          _sortCriterion = value;
+                                        });
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'Floor Number',
+                                          child: Text('Sort by Floor Number'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'Property Number',
+                                          child:
+                                              Text('Sort by Property Number'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'Company Name',
+                                          child: Text('Sort by Company Name'),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'Size (sqm)',
+                                          child: Text('Sort by Size (sqm)'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                                 children: [
                                   _buildRentSection(
@@ -233,11 +301,6 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
                                   _buildRentSection(
                                     title: 'Contract Active',
                                     rents: groupedRents['Contract_Active']!,
-                                    context: context,
-                                  ),
-                                  _buildRentSection(
-                                    title: 'Contract Prolonged',
-                                    rents: groupedRents['Contract_Prolonged']!,
                                     context: context,
                                   ),
                                   Padding(
@@ -290,6 +353,7 @@ class _ListRentEmployeeState extends State<ListRentEmployee> {
     required List<CloudRent> rents,
     required BuildContext context,
   }) {
+    _sortRents(rents);
     if (rents.isEmpty) {
       return ListTile(
         title: Text(

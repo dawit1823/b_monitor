@@ -1,3 +1,4 @@
+//rent_list.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/delete_dialog.dart';
@@ -19,6 +20,7 @@ class RentList extends StatefulWidget {
 }
 
 class _RentListState extends State<RentList> {
+  String _currentSortOption = 'property.propertyNumber';
   late final RentService _rentService;
   late final PropertyService _propertyService;
   List<CloudProfile> _profiles = [];
@@ -70,6 +72,33 @@ class _RentListState extends State<RentList> {
     });
   }
 
+  void _sortRents(List<CloudRent> rents) {
+    rents.sort((a, b) {
+      final propertyA =
+          _properties.firstWhere((prop) => prop.id == a.propertyId);
+      final propertyB =
+          _properties.firstWhere((prop) => prop.id == b.propertyId);
+
+      switch (_currentSortOption) {
+        case 'property.floorNumber':
+          return propertyA.floorNumber.compareTo(propertyB.floorNumber);
+        case 'property.propertyNumber':
+          return propertyA.propertyNumber.compareTo(propertyB.propertyNumber);
+        case 'profile.companyName':
+          final profileA =
+              _profiles.firstWhere((prof) => prof.id == a.profileId);
+          final profileB =
+              _profiles.firstWhere((prof) => prof.id == b.profileId);
+          return profileA.companyName.compareTo(profileB.companyName);
+        case 'property.sizeInSquareMeters':
+          return propertyA.sizeInSquareMeters
+              .compareTo(propertyB.sizeInSquareMeters);
+        default:
+          return 0;
+      }
+    });
+  }
+
   Future<Map<String, String>> _fetchCompanyNames(
       List<String> companyIds) async {
     final Map<String, String> companyNames = {};
@@ -85,20 +114,19 @@ class _RentListState extends State<RentList> {
   }
 
   List<CloudRent> _filterRents(Iterable<CloudRent> allRents) {
-    if (_searchQuery.isEmpty) {
-      return allRents.toList();
-    }
+    final filteredRents = _searchQuery.isEmpty
+        ? allRents.toList()
+        : allRents.where((rent) {
+            final profile =
+                _profiles.firstWhere((prof) => prof.id == rent.profileId);
+            final property =
+                _properties.firstWhere((prop) => prop.id == rent.propertyId);
+            return profile.companyName.toLowerCase().contains(_searchQuery) ||
+                property.propertyNumber.contains(_searchQuery);
+          }).toList();
 
-    return allRents.where((rent) {
-      final profile = _profiles.firstWhere(
-        (prof) => prof.id == rent.profileId,
-      );
-      final property = _properties.firstWhere(
-        (prop) => prop.id == rent.propertyId,
-      );
-      return profile.companyName.toLowerCase().contains(_searchQuery) ||
-          property.propertyNumber.contains(_searchQuery);
-    }).toList();
+    _sortRents(filteredRents);
+    return filteredRents;
   }
 
   @override
@@ -274,13 +302,52 @@ class _RentListState extends State<RentList> {
                                           Colors.white.withAlpha(25),
                                       collapsedIconColor: Colors.white,
                                       iconColor: Colors.white,
-                                      title: Text(
-                                        companyName,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18.0,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                      title: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            companyName,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18.0,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          PopupMenuButton<String>(
+                                            icon: const Icon(Icons.sort,
+                                                color: Colors.white),
+                                            onSelected: (value) {
+                                              setState(() {
+                                                _currentSortOption = value;
+                                              });
+                                            },
+                                            itemBuilder: (context) => [
+                                              const PopupMenuItem(
+                                                value: 'property.floorNumber',
+                                                child: Text(
+                                                    'Sort by Floor Number'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value:
+                                                    'property.propertyNumber',
+                                                child: Text(
+                                                    'Sort by Property Number'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'profile.companyName',
+                                                child: Text(
+                                                    'Sort by Company Name'),
+                                              ),
+                                              const PopupMenuItem(
+                                                value:
+                                                    'property.sizeInSquareMeters',
+                                                child: Text(
+                                                    'Sort by Size (Sq. Meters)'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                       children: [
                                         _buildRentSection(
@@ -307,10 +374,8 @@ class _RentListState extends State<RentList> {
                                                 ),
                                               );
                                             },
-                                            icon: const Icon(
-                                              Icons.insert_chart,
-                                              color: Colors.white,
-                                            ),
+                                            icon: const Icon(Icons.insert_chart,
+                                                color: Colors.white),
                                             label:
                                                 const Text('View Rent Report'),
                                             style: ElevatedButton.styleFrom(

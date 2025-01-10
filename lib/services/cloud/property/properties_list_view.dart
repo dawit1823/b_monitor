@@ -106,7 +106,7 @@ class PropertyListTile extends StatelessWidget {
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        '${property.description}.\nType: ${property.propertyType}',
+        'Floor: ${property.floorNumber}\nType: ${property.propertyType}',
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
       trailing: IconButton(

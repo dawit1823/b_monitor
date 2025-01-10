@@ -1,9 +1,12 @@
+//list_property.dart
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/property/create_or_update_property.dart';
 import 'package:r_and_e_monitor/services/cloud/property/properties_list_view.dart';
+
+import 'package:flutter/material.dart';
 
 import '../../rents/read_property_page.dart';
 
@@ -22,6 +25,8 @@ class _PropertyViewState extends State<ListProperty> {
   late final PropertyService _propertyService;
   late final RentService _rentService;
 
+  String _sortCriteria = 'None'; // Default sort criteria
+
   @override
   void initState() {
     _propertyService = PropertyService();
@@ -33,7 +38,7 @@ class _PropertyViewState extends State<ListProperty> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 66, 143, 107),
+        backgroundColor: const Color.fromARGB(255, 66, 143, 107),
         title: const Text("My Properties"),
         actions: [
           IconButton(
@@ -42,17 +47,14 @@ class _PropertyViewState extends State<ListProperty> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => CreateOrUpdateProperty(
-                    property: null, // No property for creation
+                    property: null,
                     creatorId: widget.creatorId,
                     companyId: widget.companyId,
                   ),
                 ),
               );
             },
-            icon: const Icon(
-              Icons.add,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.add, color: Colors.white),
           ),
         ],
       ),
@@ -60,7 +62,7 @@ class _PropertyViewState extends State<ListProperty> {
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/bg/accountant_dashboard.jpg', // Replace with your image path
+              'assets/bg/accountant_dashboard.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -76,8 +78,13 @@ class _PropertyViewState extends State<ListProperty> {
                     final filteredProperties = allProperties.where((property) =>
                         property.creatorId == widget.creatorId &&
                         property.companyId == widget.companyId);
+
+                    // Apply sorting
+                    final sortedProperties = _sortProperties(
+                        filteredProperties.toList(), _sortCriteria);
+
                     final propertiesByCompanyId =
-                        _groupPropertiesByCompanyId(filteredProperties);
+                        _groupPropertiesByCompanyId(sortedProperties);
 
                     return FutureBuilder<Map<String, String>>(
                       future:
@@ -109,12 +116,47 @@ class _PropertyViewState extends State<ListProperty> {
                                 margin: const EdgeInsets.symmetric(
                                     vertical: 10.0, horizontal: 16.0),
                                 child: ExpansionTile(
-                                  title: Text(
-                                    'Company: $companyName',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18.0,
-                                    ),
+                                  title: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Company: $companyName',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18.0,
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          setState(() {
+                                            _sortCriteria = value;
+                                          });
+                                        },
+                                        icon: const Icon(Icons.sort),
+                                        itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'floorNumber',
+                                            child: Text('Sort by Floor Number'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'propertyNumber',
+                                            child:
+                                                Text('Sort by Property Number'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'pricePerMonth',
+                                            child: Text(
+                                                'Sort by Price (Low to High)'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'sizeInSquareMeters',
+                                            child: Text(
+                                                'Sort by Size (Small to Big)'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                   children: [
                                     for (var rentalStatus in [true, false])
@@ -146,6 +188,26 @@ class _PropertyViewState extends State<ListProperty> {
         ],
       ),
     );
+  }
+
+  List<CloudProperty> _sortProperties(
+      List<CloudProperty> properties, String criteria) {
+    switch (criteria) {
+      case 'floorNumber':
+        properties.sort((a, b) => a.floorNumber.compareTo(b.floorNumber));
+        break;
+      case 'propertyNumber':
+        properties.sort((a, b) => a.propertyNumber.compareTo(b.propertyNumber));
+        break;
+      case 'pricePerMonth':
+        properties.sort((a, b) => a.pricePerMonth.compareTo(b.pricePerMonth));
+        break;
+      case 'sizeInSquareMeters':
+        properties.sort(
+            (a, b) => a.sizeInSquareMeters.compareTo(b.sizeInSquareMeters));
+        break;
+    }
+    return properties;
   }
 
   Future<Map<String, String>> _getCompanyNames(List<String> companyIds) async {
