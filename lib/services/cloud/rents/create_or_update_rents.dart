@@ -89,6 +89,19 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     }).toList();
   }
 
+  void _parsePaymentDateRange(
+      String range,
+      TextEditingController paymentDateController,
+      TextEditingController nextPaymentController) {
+    final parts = range.split(' to ');
+    if (parts.length == 2) {
+      setState(() {
+        paymentDateController.text = parts[0].trim();
+        nextPaymentController.text = parts[1].trim();
+      });
+    }
+  }
+
   void _initializePayments() {
     if (widget.rent != null && widget.rent!.paymentStatus.isNotEmpty) {
       final paymentData = widget.rent!.paymentStatus.split('; ');
@@ -157,7 +170,7 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     }
   }
 
-  Future<void> _selectDate(
+  Future<String?> _selectDate(
       BuildContext context, TextEditingController controller) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -176,7 +189,11 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
       if (controller == endDateController) {
         _updateEndContractState();
       }
+
+      return formattedDate; // Return the selected date
     }
+
+    return null; // Return null if no date is selected
   }
 
   String _generatePaymentStatusString() {
@@ -262,6 +279,75 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
         dueDateController.text = latestDepositedOn;
       });
     }
+  }
+
+  Widget _buildPaymentDateRangeField(int index) {
+    final payment = payments[index];
+    final paymentDateController = payment['paymentDate']!;
+    final nextPaymentController = payment['depositedOn']!;
+
+    return TextFormField(
+      readOnly: true,
+      decoration: const InputDecoration(
+        labelText: 'Payment Date Range (from - to)',
+        labelStyle: TextStyle(color: Colors.white, fontSize: 18),
+      ),
+      onTap: () async {
+        final range = await showDialog<String>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Select Payment Date Range'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller:
+                        TextEditingController(text: paymentDateController.text),
+                    decoration:
+                        const InputDecoration(labelText: 'From (Payment Date)'),
+                    onTap: () async {
+                      final date =
+                          await _selectDate(context, paymentDateController);
+                      if (date != null) {
+                        paymentDateController.text = date;
+                      }
+                    },
+                  ),
+                  TextFormField(
+                    controller:
+                        TextEditingController(text: nextPaymentController.text),
+                    decoration:
+                        const InputDecoration(labelText: 'To (Next Payment)'),
+                    onTap: () async {
+                      final date =
+                          await _selectDate(context, nextPaymentController);
+                      if (date != null) {
+                        nextPaymentController.text = date;
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context,
+                        '${paymentDateController.text} to ${nextPaymentController.text}');
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (range != null) {
+          _parsePaymentDateRange(
+              range, paymentDateController, nextPaymentController);
+        }
+      },
+    );
   }
 
   @override
@@ -483,28 +569,8 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                                 TextStyle(color: Colors.white, fontSize: 18),
                           ),
                         ),
-                        TextFormField(
-                          controller: payment['paymentDate'],
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Payment Date',
-                            labelStyle:
-                                TextStyle(color: Colors.white, fontSize: 18),
-                          ),
-                          onTap: () =>
-                              _selectDate(context, payment['paymentDate']!),
-                        ),
-                        TextFormField(
-                          controller: payment['depositedOn'],
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Next Payment',
-                            labelStyle:
-                                TextStyle(color: Colors.white, fontSize: 18),
-                          ),
-                          onTap: () =>
-                              _selectDate(context, payment['depositedOn']!),
-                        ),
+                        _buildPaymentDateRangeField(
+                            index), // Use the new range field
                         TextFormField(
                           controller: payment['paymentAmount'],
                           keyboardType: TextInputType.number,
