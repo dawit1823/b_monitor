@@ -26,6 +26,7 @@ class CreateOrUpdateRentView extends StatefulWidget {
 
 class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
   final _formKey = GlobalKey<FormState>();
+  final NumberFormat numberFormat = NumberFormat('#,###.##');
 
   late CloudProfile selectedProfile;
   late CloudProperty selectedProperty;
@@ -62,22 +63,31 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
             ? filteredProperties.first
             : widget.properties.first;
 
-    startDateController = TextEditingController(
-        text: widget.rent?.contract.split(',').last.split(': ').last ?? '');
-    endDateController = TextEditingController(
-        text: widget.rent?.contract.split(',').last.split(': ').last ?? '');
-    rentAmountController =
-        TextEditingController(text: widget.rent?.rentAmount.toString() ?? '');
+    // Parse contract dates
+    String startDate = '';
+    String endDate = '';
+    if (widget.rent != null && widget.rent!.contract.isNotEmpty) {
+      final contractParts = widget.rent!.contract.split(', ');
+      if (contractParts.length >= 2) {
+        startDate = contractParts[0].split(': ').last;
+        endDate = contractParts[1].split(': ').last;
+      }
+    }
+
+    // Initialize controllers with existing values
+    startDateController = TextEditingController(text: startDate);
+    endDateController = TextEditingController(text: endDate);
+    rentAmountController = TextEditingController(
+      text: widget.rent?.rentAmount != null
+          ? numberFormat.format(widget.rent!.rentAmount)
+          : '',
+    );
     dueDateController = TextEditingController(text: widget.rent?.dueDate ?? '');
     selectedEndContractState = widget.rent?.endContract ?? 'Contract_Ended';
-
     _initializePayments();
     _updateEndContractState();
     _updatePropertyIsRented();
   }
-
-  final NumberFormat currencyFormat =
-      NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
   void _filterProperties() {
     filteredProperties = widget.properties.where((property) {
@@ -285,9 +295,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
     final payment = payments[index];
     final paymentDateController = payment['paymentDate']!;
     final nextPaymentController = payment['depositedOn']!;
+    final rangeText =
+        '${paymentDateController.text} to ${nextPaymentController.text}';
 
     return TextFormField(
       readOnly: true,
+      controller: TextEditingController(text: rangeText),
       decoration: const InputDecoration(
         labelText: 'Payment Date Range (from - to)',
         labelStyle: TextStyle(color: Colors.white, fontSize: 18),
@@ -302,10 +315,13 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextFormField(
+                    style: TextStyle(color: Colors.black),
                     controller:
                         TextEditingController(text: paymentDateController.text),
-                    decoration:
-                        const InputDecoration(labelText: 'From (Payment Date)'),
+                    decoration: const InputDecoration(
+                      labelText: 'From (Payment Date)',
+                      labelStyle: TextStyle(color: Colors.black),
+                    ),
                     onTap: () async {
                       final date =
                           await _selectDate(context, paymentDateController);
@@ -315,10 +331,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     },
                   ),
                   TextFormField(
+                    style: TextStyle(color: Colors.black),
                     controller:
                         TextEditingController(text: nextPaymentController.text),
-                    decoration:
-                        const InputDecoration(labelText: 'To (Next Payment)'),
+                    decoration: const InputDecoration(
+                        labelText: 'To (Next Payment)',
+                        labelStyle: TextStyle(color: Colors.black)),
                     onTap: () async {
                       final date =
                           await _selectDate(context, nextPaymentController);
@@ -467,12 +485,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                     ),
                     onChanged: (value) {
                       if (value.isNotEmpty) {
-                        double? parsedValue =
-                            double.tryParse(value.replaceAll(',', ''));
+                        double? parsedValue = double.tryParse(
+                            value.replaceAll(RegExp(r'[^\d.]'), ''));
                         if (parsedValue != null) {
                           setState(() {
                             rentAmountController.text =
-                                currencyFormat.format(parsedValue).toString();
+                                numberFormat.format(parsedValue);
                             rentAmountController.selection =
                                 TextSelection.fromPosition(
                               TextPosition(
@@ -581,12 +599,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                           ),
                           onChanged: (value) {
                             if (value.isNotEmpty) {
-                              double? parsedValue =
-                                  double.tryParse(value.replaceAll(',', ''));
+                              double? parsedValue = double.tryParse(
+                                  value.replaceAll(RegExp(r'[^\d.]'), ''));
                               if (parsedValue != null) {
                                 setState(() {
                                   payment['paymentAmount']!.text =
-                                      currencyFormat.format(parsedValue);
+                                      numberFormat.format(parsedValue);
                                   payment['paymentAmount']!.selection =
                                       TextSelection.fromPosition(
                                     TextPosition(

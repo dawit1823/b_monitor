@@ -1,4 +1,6 @@
 //create_or_update_expense.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import '../../auth/auth_service.dart';
@@ -41,80 +43,112 @@ class _CreateOrUpdateExpenseState extends State<CreateOrUpdateExpense> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title:
-            Text(widget.expense != null ? 'Update Expense' : 'Create Expense'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
+        appBar: AppBar(
+          title: Text(
+              widget.expense != null ? 'Update Expense' : 'Create Expense'),
+        ),
+        body: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/bg/background_dashboard.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                child: Container(
+                  color: Colors.black
+                      .withAlpha(50), // Optional tint for better contrast
+                ),
+              ),
+            ),
+            Column(
               children: [
-                TextFormField(
-                  initialValue: _expenceType,
-                  decoration: const InputDecoration(labelText: 'Expense Type'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an expense type';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _expenceType = value!;
-                  },
-                ),
-                TextFormField(
-                  initialValue: _amount,
-                  decoration: const InputDecoration(labelText: 'Amount'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter an amount';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _amount = value!;
-                  },
-                ),
-                TextFormField(
-                  initialValue: _discription,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a description';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _discription = value!;
-                  },
-                ),
-                TextFormField(
-                  initialValue: _date,
-                  decoration: const InputDecoration(labelText: 'Date'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a date';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _date = value!;
-                  },
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _saveExpense,
-                  child: Text(widget.expense != null ? 'Update' : 'Create'),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            initialValue: _expenceType,
+                            decoration: const InputDecoration(
+                                labelText: 'Expense Type',
+                                labelStyle: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Colors.white),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter an expense type';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _expenceType = value!;
+                            },
+                          ),
+                          TextFormField(
+                            initialValue: _amount,
+                            decoration: const InputDecoration(
+                                labelText: 'Amount',
+                                labelStyle: TextStyle(color: Colors.white)),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter an amount';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _amount = value!;
+                            },
+                          ),
+                          TextFormField(
+                            initialValue: _discription,
+                            decoration: const InputDecoration(
+                                labelText: 'Description',
+                                labelStyle: TextStyle(color: Colors.white)),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a description';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _discription = value!;
+                            },
+                          ),
+                          TextFormField(
+                            initialValue: _date,
+                            decoration: const InputDecoration(
+                                labelText: 'Date',
+                                labelStyle: TextStyle(color: Colors.white)),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a date';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _date = value!;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: _saveExpense,
+                            child: Text(
+                                widget.expense != null ? 'Update' : 'Create'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
+          ],
+        ));
   }
 
   void _saveExpense() async {

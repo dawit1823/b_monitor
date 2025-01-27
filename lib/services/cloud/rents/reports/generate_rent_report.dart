@@ -11,15 +11,30 @@ import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_serv
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/reports/generate_monthly_report.dart';
 
-class GenerateRentReport extends StatelessWidget {
+class GenerateRentReport extends StatefulWidget {
   final String companyId;
+
+  const GenerateRentReport({super.key, required this.companyId});
+
+  @override
+  _GenerateRentReportState createState() => _GenerateRentReportState();
+}
+
+class _GenerateRentReportState extends State<GenerateRentReport> {
   final RentService _rentService = RentService();
   final PropertyService _propertyService = PropertyService();
+  List<Map<String, dynamic>> _rentDetailsList = [];
+  String _sortBy = 'profile.companyName'; // Default sorting option
 
-  GenerateRentReport({super.key, required this.companyId});
+  @override
+  void initState() {
+    super.initState();
+    _fetchRentsWithDetails();
+  }
 
-  Future<List<Map<String, dynamic>>> _fetchRentsWithDetails() async {
-    final rents = await _rentService.getRentsByCompanyId(companyId: companyId);
+  Future<void> _fetchRentsWithDetails() async {
+    final rents =
+        await _rentService.getRentsByCompanyId(companyId: widget.companyId);
     List<Map<String, dynamic>> rentDetailsList = [];
 
     for (var rent in rents) {
@@ -40,16 +55,53 @@ class GenerateRentReport extends StatelessWidget {
           'profile': profile,
           'firstPaymentDate': firstPaymentDate,
           'lastAdvancePayment': lastAdvancePayment,
-          'paymentStatus': rent.paymentStatus, // Add paymentStatus here
+          'paymentStatus': rent.paymentStatus,
         });
       }
     }
 
-    return rentDetailsList;
+    setState(() {
+      _rentDetailsList = rentDetailsList;
+      _sortRentDetails();
+    });
+  }
+
+  void _sortRentDetails() {
+    switch (_sortBy) {
+      case 'profile.companyName':
+        _rentDetailsList.sort((a, b) => (a['profile'] as CloudProfile)
+            .companyName
+            .compareTo((b['profile'] as CloudProfile).companyName));
+        break;
+      case 'propertyNumber':
+        _rentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
+            .propertyNumber
+            .compareTo((b['property'] as CloudProperty).propertyNumber));
+        break;
+      case 'floorNumber':
+        _rentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
+            .floorNumber
+            .compareTo((b['property'] as CloudProperty).floorNumber));
+        break;
+      case 'monthsLeft':
+        _rentDetailsList.sort((a, b) {
+          final rentA = a['rent'] as CloudRent;
+          final rentB = b['rent'] as CloudRent;
+          final monthsLeftA =
+              DateTime.parse(rentA.dueDate).difference(DateTime.now()).inDays ~/
+                  30;
+          final monthsLeftB =
+              DateTime.parse(rentB.dueDate).difference(DateTime.now()).inDays ~/
+                  30;
+          return monthsLeftA.compareTo(monthsLeftB);
+        });
+        break;
+    }
   }
 
   Future<String> _fetchCompanyName() async {
-    final company = await _rentService.getCompanyById(companyId: companyId);
+    final company =
+        await _rentService.getCompanyById(companyId: widget.companyId);
     return company.companyName;
   }
 
@@ -62,8 +114,7 @@ class GenerateRentReport extends StatelessWidget {
     }
   }
 
-  Future<void> _generatePdf(BuildContext context,
-      List<Map<String, dynamic>> rentDetailsList, String companyName) async {
+  Future<void> _generatePdf(BuildContext context, String companyName) async {
     await _requestPermissions();
 
     final pdf = pw.Document();
@@ -95,9 +146,9 @@ class GenerateRentReport extends StatelessWidget {
               'Months Left',
             ],
             data: List<List<String>>.generate(
-              rentDetailsList.length,
+              _rentDetailsList.length,
               (index) {
-                final rentDetail = rentDetailsList[index];
+                final rentDetail = _rentDetailsList[index];
                 final rent = rentDetail['rent'] as CloudRent;
                 final property = rentDetail['property'] as CloudProperty;
                 final profile = rentDetail['profile'] as CloudProfile;
@@ -109,6 +160,7 @@ class GenerateRentReport extends StatelessWidget {
 
                 return [
                   (index + 1).toString(),
+                  '${profile.companyName} / ${profile.firstName}',
                   property.propertyNumber,
                   property.floorNumber,
                   property.sizeInSquareMeters,
@@ -118,7 +170,6 @@ class GenerateRentReport extends StatelessWidget {
                   lastAdvancePayment,
                   rent.dueDate,
                   monthsLeft.toString(),
-                  '${profile.companyName} / ${profile.firstName}',
                 ];
               },
             ),
@@ -148,16 +199,16 @@ class GenerateRentReport extends StatelessWidget {
       builder: (BuildContext context) {
         return GestureDetector(
           onTap: () {
-            Navigator.of(context).pop(); // Close the dialog when tapped outside
+            Navigator.of(context).pop();
           },
           child: Dialog(
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
+            backgroundColor: Colors.white.withOpacity(0.1),
             child: GestureDetector(
-              onTap: () {}, // Prevent dialog from closing when tapped inside
+              onTap: () {},
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(
@@ -180,7 +231,7 @@ class GenerateRentReport extends StatelessWidget {
                       Center(
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.of(context).pop(); // Close the dialog
+                            Navigator.of(context).pop();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightBlue,
@@ -239,7 +290,7 @@ class GenerateRentReport extends StatelessWidget {
           cells: paddedCells
               .map((cell) => DataCell(Text(
                     cell,
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: Colors.black, fontWeight: FontWeight.bold),
                   )))
               .toList(),
@@ -253,20 +304,43 @@ class GenerateRentReport extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rent Report'),
+        actions: [
+          // Sort Icon Button with Dropdown Menu
+          PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.sort,
+              color: Colors.white,
+            ), // Sort icon
+            onSelected: (String newValue) {
+              setState(() {
+                _sortBy = newValue;
+                _sortRentDetails();
+              });
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'profile.companyName',
+                child: Text('Profile Name'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'propertyNumber',
+                child: Text('Property Number'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'floorNumber',
+                child: Text('Floor Number'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'monthsLeft',
+                child: Text('Months Left'),
+              ),
+            ],
+          ),
+        ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchRentsWithDetails(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No data found'));
-          } else {
-            final rentDetailsList = snapshot.data!;
-
-            return LayoutBuilder(
+      body: _rentDetailsList.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   scrollDirection: Axis.vertical,
@@ -277,8 +351,8 @@ class GenerateRentReport extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           border: TableBorder.all(
-                            color: Colors.black, // Border color
-                            width: 1.5, // Border width
+                            color: Colors.black,
+                            width: 1.5,
                           ),
                           columns: const [
                             DataColumn(label: Text('No')),
@@ -294,9 +368,9 @@ class GenerateRentReport extends StatelessWidget {
                             DataColumn(label: Text('Months Left')),
                           ],
                           rows: List<DataRow>.generate(
-                            rentDetailsList.length,
+                            _rentDetailsList.length,
                             (index) {
-                              final rentDetail = rentDetailsList[index];
+                              final rentDetail = _rentDetailsList[index];
                               final profile =
                                   rentDetail['profile'] as CloudProfile;
                               final rent = rentDetail['rent'] as CloudRent;
@@ -317,44 +391,47 @@ class GenerateRentReport extends StatelessWidget {
                                 cells: [
                                   DataCell(Text(
                                     (index + 1).toString(),
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     '${profile.companyName} / ${profile.firstName}',
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     property.propertyNumber,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     property.floorNumber,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     property.sizeInSquareMeters,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     rent.rentAmount.toString(),
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     rent.contract,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     firstPaymentDate,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                   DataCell(Text(
                                     lastAdvancePayment,
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
-                                  DataCell(Text(rent.dueDate)),
+                                  DataCell(Text(
+                                    rent.dueDate,
+                                    style: const TextStyle(color: Colors.black),
+                                  )),
                                   DataCell(Text(
                                     monthsLeft.toString(),
-                                    style: TextStyle(color: Colors.black),
+                                    style: const TextStyle(color: Colors.black),
                                   )),
                                 ],
                                 onSelectChanged: (selected) {
@@ -376,8 +453,7 @@ class GenerateRentReport extends StatelessWidget {
                           onPressed: () async {
                             final companyName = await _fetchCompanyName();
                             if (context.mounted) {
-                              await _generatePdf(
-                                  context, rentDetailsList, companyName);
+                              await _generatePdf(context, companyName);
                             }
                           },
                           child: const Text('Generate PDF'),
@@ -387,17 +463,14 @@ class GenerateRentReport extends StatelessWidget {
                   ),
                 );
               },
-            );
-          }
-        },
-      ),
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (context.mounted) {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) =>
-                    GenerateMonthlyReport(companyId: companyId),
+                    GenerateMonthlyReport(companyId: widget.companyId),
               ),
             );
           }

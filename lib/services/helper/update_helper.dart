@@ -9,7 +9,7 @@ import 'package:open_file_plus/open_file_plus.dart'; // For opening files
 class UpdateHelper {
   static const String githubApiUrl =
       "https://api.github.com/repos/dawit1823/b_monitor/releases/latest";
-  static const String currentVersion = "v16";
+  static const String currentVersion = "v18";
 
   bool _isDialogOpen = false;
 
