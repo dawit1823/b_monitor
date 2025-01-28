@@ -48,6 +48,9 @@ android {
         multiDexEnabled true
     }
 
+
+    
+
     tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:deprecation"
 }
