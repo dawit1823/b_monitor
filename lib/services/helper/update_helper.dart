@@ -9,7 +9,7 @@ import 'package:open_file_plus/open_file_plus.dart';
 class UpdateHelper {
   static const String githubApiUrl =
       "https://api.github.com/repos/dawit1823/b_monitor/releases/latest";
-  static const String currentVersion = "v18";
+  static const String currentVersion = "v19";
 
   bool _isDialogOpen = false;
   StateSetter? _setProgressState;
@@ -53,7 +53,9 @@ class UpdateHelper {
         return AlertDialog(
           title: Text("Update Available"),
           content: Text(
-              "A new version of the app is available. Would you like to update?"),
+            "A new version of the app is available. Would you like to update?",
+            style: TextStyle(color: Colors.black),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -78,7 +80,10 @@ class UpdateHelper {
       builder: (_) {
         return AlertDialog(
           title: Text("No Update Available"),
-          content: Text("You are already using the latest version of the app."),
+          content: Text(
+            "You are already using the latest version of the app.",
+            style: TextStyle(color: Colors.black),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

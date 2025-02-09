@@ -427,6 +427,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a profile';
+                      }
+                      return null;
+                    },
                   ),
                   DropdownButtonFormField<CloudProperty>(
                     value: selectedProperty,
@@ -457,6 +463,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                         fontSize: 18,
                       ),
                     ),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select a property';
+                      }
+                      return null;
+                    },
                   ),
                   TextFormField(
                     controller: startDateController,
@@ -466,6 +478,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                       labelStyle: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     onTap: () => _selectDate(context, startDateController),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a start date';
+                      }
+                      return null;
+                    },
                   ),
                   TextFormField(
                     controller: endDateController,
@@ -475,6 +493,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                       labelStyle: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     onTap: () => _selectDate(context, endDateController),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select an end date';
+                      }
+                      return null;
+                    },
                   ),
                   TextFormField(
                     controller: rentAmountController,
@@ -499,6 +523,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                           });
                         }
                       }
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the rent amount';
+                      }
+                      return null;
                     },
                   ),
                   TextFormField(
@@ -540,6 +570,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Please select an end contract state';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 20),
                   ...payments.asMap().entries.map((entry) {
@@ -571,6 +607,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                                 TextStyle(color: Colors.white, fontSize: 18),
                             labelText: 'Payment Count',
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the payment count';
+                            }
+                            return null;
+                          },
                         ),
                         TextFormField(
                           controller: payment['advancePayment'],
@@ -578,6 +620,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                               labelStyle:
                                   TextStyle(color: Colors.white, fontSize: 18),
                               labelText: 'Number of months paid'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the number of months paid';
+                            }
+                            return null;
+                          },
                         ),
                         TextFormField(
                           controller: payment['paymentType'],
@@ -586,9 +634,14 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                             labelStyle:
                                 TextStyle(color: Colors.white, fontSize: 18),
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the payment type';
+                            }
+                            return null;
+                          },
                         ),
-                        _buildPaymentDateRangeField(
-                            index), // Use the new range field
+                        _buildPaymentDateRangeField(index),
                         TextFormField(
                           controller: payment['paymentAmount'],
                           keyboardType: TextInputType.number,
@@ -615,6 +668,12 @@ class _CreateOrUpdateRentViewState extends State<CreateOrUpdateRentView> {
                                 });
                               }
                             }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the payment amount';
+                            }
+                            return null;
                           },
                         ),
                         const SizedBox(height: 10),

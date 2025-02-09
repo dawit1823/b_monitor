@@ -6,8 +6,6 @@ import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_serv
 import 'package:r_and_e_monitor/services/cloud/employee_services/property/create_or_update_property.dart';
 import 'package:r_and_e_monitor/services/cloud/property/properties_list_view.dart';
 
-import 'package:flutter/material.dart';
-
 import '../../rents/read_property_page.dart';
 
 class ListProperty extends StatefulWidget {

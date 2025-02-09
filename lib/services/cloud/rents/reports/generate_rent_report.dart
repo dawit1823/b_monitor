@@ -9,6 +9,7 @@ import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/error_dialog.d
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
+import 'package:r_and_e_monitor/services/cloud/rents/reports/ended_rents_report.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/reports/generate_monthly_report.dart';
 
 class GenerateRentReport extends StatefulWidget {
@@ -17,14 +18,18 @@ class GenerateRentReport extends StatefulWidget {
   const GenerateRentReport({super.key, required this.companyId});
 
   @override
-  _GenerateRentReportState createState() => _GenerateRentReportState();
+  State<GenerateRentReport> createState() => _GenerateRentReportState();
 }
 
 class _GenerateRentReportState extends State<GenerateRentReport> {
   final RentService _rentService = RentService();
   final PropertyService _propertyService = PropertyService();
   List<Map<String, dynamic>> _rentDetailsList = [];
-  String _sortBy = 'profile.companyName'; // Default sorting option
+  String _sortBy = 'profile.companyName';
+  bool _isLoading = true;
+  bool _hasEndedContracts = false;
+  bool _hasAnyContracts =
+      false; // New variable to track any contracts existence
 
   @override
   void initState() {
@@ -33,16 +38,25 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
   }
 
   Future<void> _fetchRentsWithDetails() async {
+    setState(() {
+      _isLoading = true;
+      _hasEndedContracts = false;
+      _hasAnyContracts = false; // Reset flags
+    });
+
     final rents =
         await _rentService.getRentsByCompanyId(companyId: widget.companyId);
     List<Map<String, dynamic>> rentDetailsList = [];
+    bool hasEnded = false;
+    bool hasAny = rents.isNotEmpty; // Check if any contracts exist
 
     for (var rent in rents) {
-      if (rent.endContract != 'Contract_Ended') {
+      if (rent.endContract == 'Contract_Ended') {
+        hasEnded = true;
+      } else {
         final property =
             await _propertyService.getProperty(id: rent.propertyId);
         final profile = await _rentService.getProfile(id: rent.profileId);
-
         final payments = rent.paymentStatus.split('; ');
         final firstPaymentDate =
             payments.isNotEmpty ? payments.last.split(', ')[3] : '';
@@ -62,7 +76,10 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
 
     setState(() {
       _rentDetailsList = rentDetailsList;
+      _hasEndedContracts = hasEnded;
+      _hasAnyContracts = hasAny; // Update based on any contracts existence
       _sortRentDetails();
+      _isLoading = false;
     });
   }
 
@@ -140,7 +157,7 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
               'Size (sqm)',
               'Rent Amount/month',
               'Contract',
-              'Payment Date ',
+              'Paid On ',
               'Advance Payment',
               'Next Payment',
               'Months Left',
@@ -259,7 +276,7 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
       'Payment Count',
       'Advance Payment',
       'Payment Type',
-      'Payment Date',
+      'Paid On',
       'Next Payment',
       'Payment Amount',
     ];
@@ -305,12 +322,8 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
       appBar: AppBar(
         title: const Text('Rent Report'),
         actions: [
-          // Sort Icon Button with Dropdown Menu
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.sort,
-              color: Colors.white,
-            ), // Sort icon
+            icon: const Icon(Icons.sort, color: Colors.white),
             onSelected: (String newValue) {
               setState(() {
                 _sortBy = newValue;
@@ -338,132 +351,181 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
           ),
         ],
       ),
-      body: _rentDetailsList.isEmpty
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          border: TableBorder.all(
-                            color: Colors.black,
-                            width: 1.5,
-                          ),
-                          columns: const [
-                            DataColumn(label: Text('No')),
-                            DataColumn(label: Text('Profile Name')),
-                            DataColumn(label: Text('Property No')),
-                            DataColumn(label: Text('Floor No')),
-                            DataColumn(label: Text('Size (sqm)')),
-                            DataColumn(label: Text('Rent Amount/month')),
-                            DataColumn(label: Text('Contract')),
-                            DataColumn(label: Text('Payment Date ')),
-                            DataColumn(label: Text('Advance Payment')),
-                            DataColumn(label: Text('Next payment')),
-                            DataColumn(label: Text('Months Left')),
-                          ],
-                          rows: List<DataRow>.generate(
-                            _rentDetailsList.length,
-                            (index) {
-                              final rentDetail = _rentDetailsList[index];
-                              final profile =
-                                  rentDetail['profile'] as CloudProfile;
-                              final rent = rentDetail['rent'] as CloudRent;
-                              final property =
-                                  rentDetail['property'] as CloudProperty;
+          : _hasAnyContracts // Check if any contracts exist (active or ended)
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              border: TableBorder.all(
+                                  color: Colors.black, width: 1.5),
+                              columns: const [
+                                DataColumn(label: Text('No')),
+                                DataColumn(label: Text('Profile Name')),
+                                DataColumn(label: Text('Property No')),
+                                DataColumn(label: Text('Floor No')),
+                                DataColumn(label: Text('Size (sqm)')),
+                                DataColumn(label: Text('Rent Amount/month')),
+                                DataColumn(label: Text('Contract')),
+                                DataColumn(label: Text('Paid On ')),
+                                DataColumn(label: Text('Advance Payment')),
+                                DataColumn(label: Text('Next payment')),
+                                DataColumn(label: Text('Months Left')),
+                              ],
+                              rows: List<DataRow>.generate(
+                                _rentDetailsList.length,
+                                (index) {
+                                  final rentDetail = _rentDetailsList[index];
+                                  final profile =
+                                      rentDetail['profile'] as CloudProfile;
+                                  final rent = rentDetail['rent'] as CloudRent;
+                                  final property =
+                                      rentDetail['property'] as CloudProperty;
 
-                              final firstPaymentDate =
-                                  rentDetail['firstPaymentDate'];
-                              final lastAdvancePayment =
-                                  rentDetail['lastAdvancePayment'];
-                              final DateTime dueDate =
-                                  DateTime.parse(rent.dueDate);
-                              final monthsLeft =
-                                  dueDate.difference(DateTime.now()).inDays ~/
+                                  final firstPaymentDate =
+                                      rentDetail['firstPaymentDate'];
+                                  final lastAdvancePayment =
+                                      rentDetail['lastAdvancePayment'];
+                                  final DateTime dueDate =
+                                      DateTime.parse(rent.dueDate);
+                                  final monthsLeft = dueDate
+                                          .difference(DateTime.now())
+                                          .inDays ~/
                                       30;
 
-                              return DataRow(
-                                cells: [
-                                  DataCell(Text(
-                                    (index + 1).toString(),
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    '${profile.companyName} / ${profile.firstName}',
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    property.propertyNumber,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    property.floorNumber,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    property.sizeInSquareMeters,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    rent.rentAmount.toString(),
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    rent.contract,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    firstPaymentDate,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    lastAdvancePayment,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    rent.dueDate,
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                    monthsLeft.toString(),
-                                    style: const TextStyle(color: Colors.black),
-                                  )),
-                                ],
-                                onSelectChanged: (selected) {
-                                  if (selected == true) {
-                                    _showPaymentStatusDialog(
-                                      context,
-                                      rentDetail['paymentStatus'],
-                                    );
-                                  }
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(
+                                        (index + 1).toString(),
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        '${profile.companyName} / ${profile.firstName}',
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.propertyNumber,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.floorNumber,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.sizeInSquareMeters,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.rentAmount.toString(),
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.contract,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        firstPaymentDate,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        lastAdvancePayment,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.dueDate,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        monthsLeft.toString(),
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                    ],
+                                    onSelectChanged: (selected) {
+                                      if (selected == true) {
+                                        _showPaymentStatusDialog(
+                                          context,
+                                          rentDetail['paymentStatus'],
+                                        );
+                                      }
+                                    },
+                                  );
                                 },
-                              );
-                            },
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 20),
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final companyName =
+                                        await _fetchCompanyName();
+                                    if (context.mounted) {
+                                      await _generatePdf(context, companyName);
+                                    }
+                                  },
+                                  child: const Text('Generate PDF'),
+                                ),
+                                const SizedBox(height: 10),
+                                if (_hasEndedContracts)
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                EndedRentsReport(
+                                                    companyId:
+                                                        widget.companyId),
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                      child: const Text(
+                                          'View Ended Contract Report'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final companyName = await _fetchCompanyName();
-                            if (context.mounted) {
-                              await _generatePdf(context, companyName);
-                            }
-                          },
-                          child: const Text('Generate PDF'),
-                        ),
-                      ),
-                    ],
+                    );
+                  },
+                )
+              : const Center(
+                  child: Text(
+                    'There are no rents to display', // Consider updating message text
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold),
                   ),
-                );
-              },
-            ),
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           if (context.mounted) {
@@ -476,14 +538,9 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
           }
         },
         backgroundColor: Colors.lightBlue,
-        icon: const Icon(
-          Icons.report,
-          color: Colors.black,
-        ),
-        label: const Text(
-          'Monthly Report',
-          style: TextStyle(color: Colors.white),
-        ),
+        icon: const Icon(Icons.report, color: Colors.black),
+        label:
+            const Text('Monthly Report', style: TextStyle(color: Colors.white)),
         tooltip: 'Generate Monthly Report',
       ),
     );

@@ -120,13 +120,13 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
           pw.TableHelper.fromTextArray(
             headers: [
               'No',
+              'Profile Name',
               'Property No.',
               'Floor No.',
               'Size (sqm)',
               'Rent Amount/month',
               'Contract',
-              'Profile Name',
-              'Payment Date ',
+              'paid On ',
               'Advance Payment',
               'Next Payment',
               'Months Left',
@@ -251,7 +251,7 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
       'Payment Count',
       'Advance Payment',
       'Payment Type',
-      'Payment Date',
+      'Paid On',
       'Next Payment',
       'Payment Amount',
     ];
@@ -367,6 +367,12 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                             ),
                             DataColumn(
                               label: Text(
+                                'Profile Name',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
                                 'Property No',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
@@ -397,13 +403,7 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                             ),
                             DataColumn(
                               label: Text(
-                                'Profile Name',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Payment Date',
+                                'Paid On',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -465,7 +465,8 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                                       style: TextStyle(color: Colors.black))),
                                   DataCell(Text(property.propertyNumber,
                                       style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(property.floorNumber)),
+                                  DataCell(Text(property.floorNumber,
+                                      style: TextStyle(color: Colors.black))),
                                   DataCell(Text(property.sizeInSquareMeters,
                                       style: TextStyle(color: Colors.black))),
                                   DataCell(Text(rent.rentAmount.toString(),
@@ -493,11 +494,11 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
+                                  const DataCell(Text('')),
                                   DataCell(Text(totalRentAmount.toString(),
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.black))),
-                                  const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
                                   const DataCell(Text('')),
