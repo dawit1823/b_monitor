@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:open_file_plus/open_file_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -23,7 +24,12 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
   final RentService _rentService = RentService();
   final PropertyService _propertyService = PropertyService();
   List<Map<String, dynamic>> _rentDetailsList = [];
+  List<Map<String, dynamic>> _filteredRentDetailsList = [];
   String _sortBy = 'profile.companyName';
+  bool _isLoading = true;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
   @override
   void initState() {
@@ -32,21 +38,25 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
   }
 
   Future<void> _fetchEndedRentsWithDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final rents =
-    await _rentService.getRentsByCompanyId(companyId: widget.companyId);
+        await _rentService.getRentsByCompanyId(companyId: widget.companyId);
     List<Map<String, dynamic>> rentDetailsList = [];
 
     for (var rent in rents) {
       if (rent.endContract == 'Contract_Ended') {
         final property =
-        await _propertyService.getProperty(id: rent.propertyId);
+            await _propertyService.getProperty(id: rent.propertyId);
         final profile = await _rentService.getProfile(id: rent.profileId);
 
         final payments = rent.paymentStatus.split('; ');
         final firstPaymentDate =
-        payments.isNotEmpty ? payments.last.split(', ')[3] : '';
+            payments.isNotEmpty ? payments.last.split(', ')[3] : '';
         final lastAdvancePayment =
-        payments.isNotEmpty ? payments.last.split(', ')[1] : '';
+            payments.isNotEmpty ? payments.last.split(', ')[1] : '';
 
         rentDetailsList.add({
           'rent': rent,
@@ -55,52 +65,90 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
           'firstPaymentDate': firstPaymentDate,
           'lastAdvancePayment': lastAdvancePayment,
           'paymentStatus': rent.paymentStatus,
+          'contractEndedDate':
+              rent.dueDate, // Using dueDate as contract ended date
         });
       }
     }
 
     setState(() {
       _rentDetailsList = rentDetailsList;
+      _filteredRentDetailsList = List.from(_rentDetailsList);
       _sortRentDetails();
+      _isLoading = false;
+    });
+  }
+
+  void _filterByDateRange() {
+    if (_startDate == null || _endDate == null) {
+      setState(() {
+        _filteredRentDetailsList = List.from(_rentDetailsList);
+      });
+      return;
+    }
+
+    setState(() {
+      _filteredRentDetailsList = _rentDetailsList.where((rentDetail) {
+        final rent = rentDetail['rent'] as CloudRent;
+        final endedDate = DateTime.parse(rent.dueDate);
+        return endedDate.isAfter(_startDate!) && endedDate.isBefore(_endDate!);
+      }).toList();
     });
   }
 
   void _sortRentDetails() {
     switch (_sortBy) {
       case 'profile.companyName':
-        _rentDetailsList.sort((a, b) => (a['profile'] as CloudProfile)
+        _filteredRentDetailsList.sort((a, b) => (a['profile'] as CloudProfile)
             .companyName
             .compareTo((b['profile'] as CloudProfile).companyName));
         break;
       case 'propertyNumber':
-        _rentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
+        _filteredRentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
             .propertyNumber
             .compareTo((b['property'] as CloudProperty).propertyNumber));
         break;
       case 'floorNumber':
-        _rentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
+        _filteredRentDetailsList.sort((a, b) => (a['property'] as CloudProperty)
             .floorNumber
             .compareTo((b['property'] as CloudProperty).floorNumber));
         break;
-      case 'monthsLeft':
-        _rentDetailsList.sort((a, b) {
-          final rentA = a['rent'] as CloudRent;
-          final rentB = b['rent'] as CloudRent;
-          final monthsLeftA =
-              DateTime.parse(rentA.dueDate).difference(DateTime.now()).inDays ~/
-                  30;
-          final monthsLeftB =
-              DateTime.parse(rentB.dueDate).difference(DateTime.now()).inDays ~/
-                  30;
-          return monthsLeftA.compareTo(monthsLeftB);
-        });
-        break;
+    }
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
+      });
+      _filterByDateRange();
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
+      });
+      _filterByDateRange();
     }
   }
 
   Future<String> _fetchCompanyName() async {
     final company =
-    await _rentService.getCompanyById(companyId: widget.companyId);
+        await _rentService.getCompanyById(companyId: widget.companyId);
     return company.companyName;
   }
 
@@ -130,6 +178,11 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
               style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
             ),
           ),
+          if (_startDate != null && _endDate != null)
+            pw.Paragraph(
+              text:
+                  'Date Range: ${_dateFormat.format(_startDate!)} to ${_dateFormat.format(_endDate!)}',
+            ),
           pw.TableHelper.fromTextArray(
             headers: [
               'No',
@@ -139,23 +192,19 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
               'Size (sqm)',
               'Rent Amount/month',
               'Contract',
-              'Payment Date ',
+              'Payment Date',
               'Advance Payment',
-              'Next Payment',
-              'Months Left',
+              'Contract Ended Date',
             ],
             data: List<List<String>>.generate(
-              _rentDetailsList.length,
-                  (index) {
-                final rentDetail = _rentDetailsList[index];
+              _filteredRentDetailsList.length,
+              (index) {
+                final rentDetail = _filteredRentDetailsList[index];
                 final rent = rentDetail['rent'] as CloudRent;
                 final property = rentDetail['property'] as CloudProperty;
                 final profile = rentDetail['profile'] as CloudProfile;
                 final firstPaymentDate = rentDetail['firstPaymentDate'];
                 final lastAdvancePayment = rentDetail['lastAdvancePayment'];
-                final DateTime dueDate = DateTime.parse(rent.dueDate);
-                final monthsLeft =
-                    dueDate.difference(DateTime.now()).inDays ~/ 30;
 
                 return [
                   (index + 1).toString(),
@@ -168,7 +217,6 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
                   firstPaymentDate,
                   lastAdvancePayment,
                   rent.dueDate,
-                  monthsLeft.toString(),
                 ];
               },
             ),
@@ -268,15 +316,15 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
       columns: headers
           .map(
             (header) => DataColumn(
-          label: Text(
-            header,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+              label: Text(
+                header,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
             ),
-          ),
-        ),
-      )
+          )
           .toList(),
       rows: rows.map((row) {
         final cells = row.split(', ');
@@ -288,10 +336,10 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
         return DataRow(
           cells: paddedCells
               .map((cell) => DataCell(Text(
-            cell,
-            style: const TextStyle(
-                color: Colors.black, fontWeight: FontWeight.bold),
-          )))
+                    cell,
+                    style: const TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  )))
               .toList(),
         );
       }).toList(),
@@ -325,144 +373,178 @@ class _EndedRentsReportState extends State<EndedRentsReport> {
                 value: 'floorNumber',
                 child: Text('Floor Number'),
               ),
-              const PopupMenuItem<String>(
-                value: 'monthsLeft',
-                child: Text('Months Left'),
-              ),
             ],
           ),
         ],
       ),
-      body: _rentDetailsList.isEmpty
-          ? const Center(
-        child: Text(
-          'There are no ended contracts to display',
-          style: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold),
-        ),
-      )
-          : LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    border: TableBorder.all(
-                      color: Colors.black,
-                      width: 1.5,
-                    ),
-                    columns: const [
-                      DataColumn(label: Text('No')),
-                      DataColumn(label: Text('Profile Name')),
-                      DataColumn(label: Text('Property No')),
-                      DataColumn(label: Text('Floor No')),
-                      DataColumn(label: Text('Size (sqm)')),
-                      DataColumn(label: Text('Rent Amount/month')),
-                      DataColumn(label: Text('Contract')),
-                      DataColumn(label: Text('Payment Date ')),
-                      DataColumn(label: Text('Advance Payment')),
-                      DataColumn(label: Text('Next payment')),
-                      DataColumn(label: Text('Months Left')),
-                    ],
-                    rows: List<DataRow>.generate(
-                      _rentDetailsList.length,
-                          (index) {
-                        final rentDetail = _rentDetailsList[index];
-                        final profile =
-                        rentDetail['profile'] as CloudProfile;
-                        final rent = rentDetail['rent'] as CloudRent;
-                        final property =
-                        rentDetail['property'] as CloudProperty;
-                        final firstPaymentDate =
-                        rentDetail['firstPaymentDate'];
-                        final lastAdvancePayment =
-                        rentDetail['lastAdvancePayment'];
-                        final DateTime dueDate =
-                        DateTime.parse(rent.dueDate);
-                        final monthsLeft =
-                            dueDate.difference(DateTime.now()).inDays ~/
-                                30;
-
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(
-                              (index + 1).toString(),
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              '${profile.companyName} / ${profile.firstName}',
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              property.propertyNumber,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              property.floorNumber,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              property.sizeInSquareMeters,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              rent.rentAmount.toString(),
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              rent.contract,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              firstPaymentDate,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              lastAdvancePayment,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              rent.dueDate,
-                              style: TextStyle(color: Colors.black),
-                            )),
-                            DataCell(Text(
-                              monthsLeft.toString(),
-                              style: TextStyle(color: Colors.black),
-                            )),
-                          ],
-                          onSelectChanged: (selected) {
-                            if (selected == true) {
-                              _showPaymentStatusDialog(
-                                  context, rentDetail['paymentStatus']);
-                            }
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => _selectStartDate(context),
+                          child: Text(
+                            _startDate == null
+                                ? 'Select Start Date'
+                                : 'Start: ${_dateFormat.format(_startDate!)}',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => _selectEndDate(context),
+                          child: Text(
+                            _endDate == null
+                                ? 'Select End Date'
+                                : 'End: ${_dateFormat.format(_endDate!)}',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _startDate = null;
+                              _endDate = null;
+                              _filteredRentDetailsList =
+                                  List.from(_rentDetailsList);
+                            });
                           },
-                        );
-                      },
+                          child: const Text('Clear Filter'),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final companyName = await _fetchCompanyName();
-                      if (context.mounted) {
-                        await _generatePdf(context, companyName);
-                      }
-                    },
-                    child: const Text('Generate PDF'),
-                  ),
+                Expanded(
+                  child: _filteredRentDetailsList.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No ended contracts found for the selected date range',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              border: TableBorder.all(
+                                color: Colors.black,
+                                width: 1.5,
+                              ),
+                              columns: const [
+                                DataColumn(label: Text('No')),
+                                DataColumn(label: Text('Profile Name')),
+                                DataColumn(label: Text('Property No')),
+                                DataColumn(label: Text('Floor No')),
+                                DataColumn(label: Text('Size (sqm)')),
+                                DataColumn(label: Text('Rent Amount/month')),
+                                DataColumn(label: Text('Contract')),
+                                DataColumn(label: Text('Payment Date')),
+                                DataColumn(label: Text('Advance Payment')),
+                                DataColumn(label: Text('Contract Ended Date')),
+                              ],
+                              rows: List<DataRow>.generate(
+                                _filteredRentDetailsList.length,
+                                (index) {
+                                  final rentDetail =
+                                      _filteredRentDetailsList[index];
+                                  final profile =
+                                      rentDetail['profile'] as CloudProfile;
+                                  final rent = rentDetail['rent'] as CloudRent;
+                                  final property =
+                                      rentDetail['property'] as CloudProperty;
+                                  final firstPaymentDate =
+                                      rentDetail['firstPaymentDate'];
+                                  final lastAdvancePayment =
+                                      rentDetail['lastAdvancePayment'];
+
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(
+                                        (index + 1).toString(),
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        '${profile.companyName} / ${profile.firstName}',
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.propertyNumber,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.floorNumber,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        property.sizeInSquareMeters,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.rentAmount.toString(),
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.contract,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        firstPaymentDate,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        lastAdvancePayment,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                      DataCell(Text(
+                                        rent.dueDate,
+                                        style: const TextStyle(
+                                            color: Colors.black),
+                                      )),
+                                    ],
+                                    onSelectChanged: (selected) {
+                                      if (selected == true) {
+                                        _showPaymentStatusDialog(context,
+                                            rentDetail['paymentStatus']);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
                 ),
               ],
             ),
-          );
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final companyName = await _fetchCompanyName();
+          if (context.mounted) {
+            await _generatePdf(context, companyName);
+          }
         },
+        tooltip: 'Generate PDF',
+        child: const Icon(Icons.picture_as_pdf),
       ),
     );
   }

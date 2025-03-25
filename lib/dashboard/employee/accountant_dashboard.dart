@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:r_and_e_monitor/dashboard/calendar/calendar_converter_screen.dart';
 import 'package:r_and_e_monitor/dashboard/employee/service/financial_management/financial_report_employee.dart';
 import 'package:r_and_e_monitor/dashboard/employee/service/financial_management/list_financial_management.dart';
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/logout_dialog.dart';
@@ -213,6 +214,12 @@ class AccountantDashboard extends StatelessWidget {
                   creatorId: employee.creatorId,
                   companyId: employee.companyId,
                 ),
+              ),
+              _buildDrawerItem(
+                context: context,
+                title: 'Date Converter',
+                icon: Icons.calendar_today,
+                destination: CalendarConverterScreen(),
               ),
             ],
           ),

@@ -1,12 +1,12 @@
-//generate_monthly_report.dart
+// generate_monthly_report.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:open_file_plus/open_file_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:r_and_e_monitor/dashboard/views/utilities/dialogs/generic_dialog.dart';
-import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_property_service.dart';
 
@@ -23,11 +23,22 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
   final RentService _rentService = RentService();
   final PropertyService _propertyService = PropertyService();
   DateTimeRange? selectedDateRange;
+  final NumberFormat _currencyFormat = NumberFormat('#,##0.00');
 
-  Future<List<Map<String, dynamic>>> _fetchRentsWithDetails() async {
+  @override
+  void initState() {
+    super.initState();
+    // Set default to current month
+    final now = DateTime.now();
+    final firstDay = DateTime(now.year, now.month, 1);
+    final lastDay = DateTime(now.year, now.month + 1, 0);
+    selectedDateRange = DateTimeRange(start: firstDay, end: lastDay);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAllPayments() async {
     final rents =
         await _rentService.getRentsByCompanyId(companyId: widget.companyId);
-    List<Map<String, dynamic>> rentDetailsList = [];
+    List<Map<String, dynamic>> allPayments = [];
 
     for (var rent in rents) {
       if (rent.endContract != 'Contract_Ended') {
@@ -36,123 +47,154 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
         final profile = await _rentService.getProfile(id: rent.profileId);
 
         final payments = rent.paymentStatus.split('; ');
-        final firstPaymentDate =
-            payments.isNotEmpty ? payments.last.split(', ')[3] : '';
-        final lastAdvancePayment =
-            payments.isNotEmpty ? payments.last.split(', ')[1] : '';
-        final paymentDate = rent.paymentStatus.split(', ').length > 3
-            ? rent.paymentStatus.split(', ')[3]
-            : '';
-
-        rentDetailsList.add({
-          'rent': rent,
-          'property': property,
-          'profile': profile,
-          'firstPaymentDate': firstPaymentDate,
-          'lastAdvancePayment': lastAdvancePayment,
-          'paymentDate': paymentDate,
-        });
+        for (var payment in payments) {
+          final components = payment.split(', ');
+          if (components.length >= 6) {
+            allPayments.add({
+              'rent': rent,
+              'property': property,
+              'profile': profile,
+              'paymentCount': components[0],
+              'advancePayment': components[1],
+              'paymentType': components[2],
+              'paymentDate': components[3],
+              'depositedOn': components[4],
+              'paymentAmount': components[5],
+            });
+          }
+        }
       }
     }
-
-    return rentDetailsList;
+    return allPayments;
   }
 
-  List<Map<String, dynamic>> _filterRentsByDateRange(
-      List<Map<String, dynamic>> rentDetails, DateTimeRange dateRange) {
-    return rentDetails.where((rentDetail) {
-      final paymentDate = DateTime.parse(rentDetail['paymentDate']);
-      return paymentDate.isAfter(dateRange.start) &&
-          paymentDate.isBefore(dateRange.end);
+  List<Map<String, dynamic>> _filterPaymentsByDateRange(
+      List<Map<String, dynamic>> payments, DateTimeRange? dateRange) {
+    if (dateRange == null) return payments;
+
+    return payments.where((payment) {
+      try {
+        final paymentDate = DateTime.parse(payment['paymentDate']);
+        return (paymentDate
+                .isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
+            paymentDate.isBefore(dateRange.end.add(const Duration(days: 1))));
+      } catch (e) {
+        return false;
+      }
     }).toList();
   }
 
   Future<void> _selectDateRange() async {
     final picked = await showDateRangePicker(
-      context: context,
-      initialDateRange: selectedDateRange ??
-          DateTimeRange(
-              start: DateTime.now().subtract(const Duration(days: 30)),
-              end: DateTime.now()),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            primaryColor: Colors.lightBlue,
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(color: Colors.black),
+        context: context,
+        initialDateRange: selectedDateRange,
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2101),
+        builder: (context, child) {
+          return Theme(
+            data: ThemeData.light().copyWith(
+              primaryColor: Colors.deepPurple, // Header color
+              colorScheme: ColorScheme.light(
+                  primary: Colors.deepPurple), // Selected dates
+              buttonTheme:
+                  const ButtonThemeData(textTheme: ButtonTextTheme.primary),
             ),
-            datePickerTheme: const DatePickerThemeData(
-              rangePickerBackgroundColor: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (!mounted) return; // Guard against widget dismount
+            child: child!,
+          );
+        });
 
     if (picked != null && picked != selectedDateRange) {
-      setState(() {
-        selectedDateRange = picked;
-      });
+      setState(() => selectedDateRange = picked);
     }
   }
 
   Future<void> _generatePdf(
-      List<Map<String, dynamic>> rentDetailsList, String companyName) async {
+      List<Map<String, dynamic>> payments, String companyName) async {
     final pdf = pw.Document();
+    final filteredPayments =
+        _filterPaymentsByDateRange(payments, selectedDateRange);
+
+    // Calculate totals
+    double totalRI = filteredPayments.fold(
+        0.0,
+        (sum, payment) =>
+            sum +
+            (double.tryParse(payment['paymentAmount'].replaceAll(',', '')) ??
+                0.0));
+    double vat = totalRI * 0.015;
+    double total = totalRI + vat;
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         orientation: pw.PageOrientation.landscape,
         build: (pw.Context context) => [
-          pw.Header(
-            level: 0,
-            child: pw.Text(
-              '$companyName Monthly Rent Report',
-              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
-            ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                '$companyName Monthly Rent Report',
+                style:
+                    pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'Date Range: ${DateFormat('yyyy-MM-dd').format(selectedDateRange!.start)} to ${DateFormat('yyyy-MM-dd').format(selectedDateRange!.end)}',
+                style: pw.TextStyle(fontSize: 12),
+              ),
+              pw.SizedBox(height: 16),
+            ],
           ),
           pw.TableHelper.fromTextArray(
             headers: [
               'No',
-              'Profile Name',
-              'Property No.',
-              'Floor No.',
+              'Profile',
+              'Property',
+              'Floor',
               'Size (sqm)',
-              'Rent Amount/month',
-              'Contract',
-              'paid On ',
-              'Advance Payment',
-              'Next Payment',
-              'Months Left',
+              'Payment Type',
+              'Payment Date',
+              'Amount',
+              'Advance Months',
             ],
-            data: List<List<String>>.generate(
-              rentDetailsList.length,
-              (index) {
-                final rentDetail = rentDetailsList[index];
-                final property = rentDetail['property'] as CloudProperty;
-                final profile = rentDetail['profile'] as CloudProfile;
-                final rent = rentDetail['rent'] as CloudRent;
-                final paymentDate = rentDetail['paymentDate'];
-
+            data: [
+              ...filteredPayments.asMap().entries.map((e) {
+                final index = e.key;
+                final payment = e.value;
                 return [
                   (index + 1).toString(),
-                  property.propertyNumber,
-                  property.floorNumber,
-                  '${profile.firstName} ${profile.lastName}',
-                  rent.rentAmount.toString(),
-                  rent.paymentStatus.split(', ')[2],
-                  rent.paymentStatus.split(', ')[4],
-                  rent.paymentStatus.split(', ')[1],
-                  paymentDate,
+                  payment['profile'].companyName,
+                  payment['property'].propertyNumber,
+                  payment['property'].floorNumber,
+                  payment['property'].sizeInSquareMeters,
+                  payment['paymentType'],
+                  payment['paymentDate'],
+                  payment['paymentAmount'],
+                  payment['advancePayment'],
                 ];
-              },
-            ),
+              }),
+              [
+                'Total RI:',
+                '',
+                '',
+                '',
+                '',
+                '',
+                _currencyFormat.format(totalRI)
+              ],
+              [
+                'VAT (1.5%):',
+                '',
+                '',
+                '',
+                '',
+                '',
+                _currencyFormat.format(
+                  vat,
+                )
+              ],
+              ['Total:', '', '', '', '', '', _currencyFormat.format(total)],
+            ],
           ),
         ],
       ),
@@ -162,371 +204,265 @@ class GenerateMonthlyReportState extends State<GenerateMonthlyReport> {
     final file = File('${output.path}/monthly_rent_report.pdf');
     await file.writeAsBytes(await pdf.save());
 
-    // Guard against widget dismount
-
-    final result = await OpenFile.open(file.path);
     if (!mounted) return;
+    final result = await OpenFile.open(file.path);
     if (result.type != ResultType.done) {
-      // Show error dialog instead of printing in production
       await showGenericDialog(
         context: context,
         title: "Error",
         content: "Failed to open PDF: ${result.message}",
-        optionBuilder: () => {
-          'OK': null,
-        },
+        optionBuilder: () => {'OK': null},
       );
     }
   }
 
-  Future<String> _fetchCompanyName() async {
-    final company =
-        await _rentService.getCompanyById(companyId: widget.companyId);
-    return company.companyName;
-  }
+  Widget _buildDataTable(List<Map<String, dynamic>> payments) {
+    final filteredPayments =
+        _filterPaymentsByDateRange(payments, selectedDateRange);
+    double totalRI = filteredPayments.fold(
+        0.0,
+        (sum, payment) =>
+            sum +
+            (double.tryParse(payment['paymentAmount'].replaceAll(',', '')) ??
+                0.0));
+    double vat = totalRI * 0.015;
+    double total = totalRI + vat;
 
-  void _showPaymentStatusDialog(BuildContext context, String paymentStatus) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop(); // Close the dialog when tapped outside
-          },
-          child: Dialog(
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            child: GestureDetector(
-              onTap: () {}, // Prevent dialog from closing when tapped inside
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Payment Status',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const Divider(),
-                      _buildPaymentStatusTable(paymentStatus),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Close the dialog
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.lightBlue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                          child: const Text('Close'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        border: TableBorder.all(), // Add table borders
+        columns: const [
+          DataColumn(label: Text('No', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Profile', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Property', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Floor', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Size (sqm)', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label:
+                  Text('Payment Type', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label:
+                  Text('Payment Date', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Amount', style: TextStyle(color: Colors.black))),
+          DataColumn(
+              label: Text('Advance Months',
+                  style: TextStyle(color: Colors.black))),
+        ],
+        rows: [
+          ...filteredPayments.asMap().entries.map((entry) {
+            final index = entry.key;
+            final payment = entry.value;
+            return DataRow(
+              cells: [
+                DataCell(Text(
+                  (index + 1).toString(),
+                  style: const TextStyle(color: Colors.black),
+                )),
+                DataCell(Text(payment['profile'].companyName,
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['property'].propertyNumber,
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['property'].floorNumber,
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['property'].sizeInSquareMeters,
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['paymentType'],
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['paymentDate'],
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['paymentAmount'],
+                    style: const TextStyle(color: Colors.black))),
+                DataCell(Text(payment['advancePayment'],
+                    style: const TextStyle(color: Colors.black))),
+              ],
+            );
+          }),
+          DataRow(
+            cells: [
+              const DataCell(Text('Total RI:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black))),
+              DataCell(Text(_currencyFormat.format(totalRI),
+                  style: const TextStyle(color: Colors.black))),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+            ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPaymentStatusTable(String paymentStatus) {
-    final rows = paymentStatus.split('; ');
-    final headers = [
-      'Payment Count',
-      'Advance Payment',
-      'Payment Type',
-      'Paid On',
-      'Next Payment',
-      'Payment Amount',
-    ];
-
-    return DataTable(
-      border: TableBorder.all(color: Colors.black),
-      columns: headers
-          .map(
-            (header) => DataColumn(
-              label: Text(
-                header,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          )
-          .toList(),
-      rows: rows.map((row) {
-        final cells = row.split(', ');
-        final paddedCells = List<String>.from(cells);
-        while (paddedCells.length < headers.length) {
-          paddedCells.add('');
-        }
-
-        return DataRow(
-          cells: paddedCells
-              .map((cell) => DataCell(Text(
-                    cell,
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )))
-              .toList(),
-        );
-      }).toList(),
+          DataRow(
+            cells: [
+              const DataCell(Text('VAT (1.5%):',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black))),
+              DataCell(Text(_currencyFormat.format(vat),
+                  style: const TextStyle(color: Colors.black))),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+            ],
+          ),
+          DataRow(
+            cells: [
+              const DataCell(Text('Total:',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black))),
+              DataCell(Text(_currencyFormat.format(total),
+                  style: const TextStyle(color: Colors.black))),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+              const DataCell(Text('')),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generate Monthly Report')),
+      appBar: AppBar(title: const Text('Monthly Financial Report')),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _selectDateRange,
-              child: const Text('Select Date Range'),
-            ),
-          ),
-          if (selectedDateRange != null)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'From: '
-                '${selectedDateRange!.start.toLocal().toString().split(' ')[0]} To '
-                '${selectedDateRange!.end.toLocal().toString().split(' ')[0]}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _selectDateRange,
+                    child: const Text('Select Date Range'),
+                  ),
+                  if (selectedDateRange != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0),
+                      child: Text(
+                        '${DateFormat('yyyy-MM-dd').format(selectedDateRange!.start)} '
+                        'to ${DateFormat('yyyy-MM-dd').format(selectedDateRange!.end)}',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                      ),
+                    ),
+                ],
               ),
             ),
+          ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _fetchRentsWithDetails(),
+              future: _fetchAllPayments(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data found'));
-                } else {
-                  final rentDetailsList = selectedDateRange != null
-                      ? _filterRentsByDateRange(
-                          snapshot.data!, selectedDateRange!)
-                      : snapshot.data!;
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.black)));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                      child: Text('No payment records found',
+                          style: TextStyle(color: Colors.black)));
+                }
 
-                  double totalRentAmount =
-                      rentDetailsList.fold(0.0, (sum, rentDetail) {
-                    final rent = rentDetail['rent'] as CloudRent;
-                    return sum + rent.rentAmount;
-                  });
+                // Calculate totals here for both table and summary card
+                final filteredPayments = _filterPaymentsByDateRange(
+                    snapshot.data!, selectedDateRange);
+                final totalRI = filteredPayments.fold(
+                    0.0,
+                    (sum, payment) =>
+                        sum +
+                        (double.tryParse(
+                                payment['paymentAmount'].replaceAll(',', '')) ??
+                            0.0));
+                final vat = totalRI * 0.015;
+                final total = totalRI + vat;
 
-                  return Column(
-                    children: [
-                      // Inside your DataTable widget
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          border: TableBorder.all(
-                            color: Colors.black, // Border color
-                            width: 1.0, // Border width
-                          ),
-                          headingRowColor:
-                              WidgetStateProperty.resolveWith<Color?>(
-                            (states) =>
-                                Colors.grey[300], // Header background color
-                          ),
-                          columns: const [
-                            DataColumn(
-                              label: Text(
-                                'No',
-                                style: TextStyle(
+                return Column(
+                  children: [
+                    Expanded(child: _buildDataTable(filteredPayments)),
+                    const SizedBox(height: 10),
+                    Card(
+                      margin: const EdgeInsets.all(8.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Summary',
+                              style: TextStyle(
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Total RI: \$${_currencyFormat.format(totalRI)}',
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
                                 ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Profile Name',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Property No',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Floor No',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Size (sqm)',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Rent Amount/month',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Contract',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Paid On',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Advance Payment',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Next Payment',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Months Left',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
+                                Text(
+                                  'VAT (1.5%): \$${_currencyFormat.format(vat)}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
+                                ),
+                                Text(
+                                  'Total: \$${_currencyFormat.format(total)}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
+                                ),
+                              ],
                             ),
                           ],
-                          rows: List<DataRow>.generate(
-                            rentDetailsList.length,
-                            (index) {
-                              final rentDetail = rentDetailsList[index];
-                              final profile =
-                                  rentDetail['profile'] as CloudProfile;
-                              final rent = rentDetail['rent'] as CloudRent;
-                              final property =
-                                  rentDetail['property'] as CloudProperty;
-
-                              final firstPaymentDate =
-                                  rentDetail['firstPaymentDate'];
-                              final lastAdvancePayment =
-                                  rentDetail['lastAdvancePayment'];
-                              final DateTime dueDate =
-                                  DateTime.parse(rent.dueDate);
-                              final monthsLeft =
-                                  dueDate.difference(DateTime.now()).inDays ~/
-                                      30;
-
-                              return DataRow(
-                                onSelectChanged: (selected) {
-                                  if (selected ?? false) {
-                                    _showPaymentStatusDialog(
-                                      context,
-                                      rent.paymentStatus,
-                                    );
-                                  }
-                                },
-                                cells: [
-                                  DataCell(Text(
-                                    (index + 1).toString(),
-                                    style: TextStyle(color: Colors.black),
-                                  )),
-                                  DataCell(Text(
-                                      '${profile.companyName} / ${profile.firstName}',
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(property.propertyNumber,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(property.floorNumber,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(property.sizeInSquareMeters,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(rent.rentAmount.toString(),
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(rent.contract,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(firstPaymentDate,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(lastAdvancePayment,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(rent.dueDate,
-                                      style: TextStyle(color: Colors.black))),
-                                  DataCell(Text(monthsLeft.toString(),
-                                      style: TextStyle(color: Colors.black))),
-                                ],
-                              );
-                            },
-                          )..add(
-                              DataRow(
-                                cells: [
-                                  const DataCell(Text('Total',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black))),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  DataCell(Text(totalRentAmount.toString(),
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black))),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                  const DataCell(Text('')),
-                                ],
-                              ),
-                            ),
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-                      ElevatedButton(
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton(
                         onPressed: () async {
-                          final companyName = await _fetchCompanyName();
-                          await _generatePdf(rentDetailsList, companyName);
-
-                          if (!context.mounted) return;
+                          final company = await _rentService.getCompanyById(
+                              companyId: widget.companyId);
+                          await _generatePdf(
+                              snapshot.data!, company.companyName);
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('PDF saved successfully.')),
+                                content: Text('PDF generated successfully',
+                                    style: TextStyle(color: Colors.black))),
                           );
                         },
-                        child: const Text('Print Report'),
+                        child: const Text('Export to PDF'),
                       ),
-                    ],
-                  );
-                }
+                    ),
+                  ],
+                );
               },
             ),
           ),
