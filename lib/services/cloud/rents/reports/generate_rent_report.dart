@@ -219,13 +219,13 @@ class _GenerateRentReportState extends State<GenerateRentReport> {
             Navigator.of(context).pop();
           },
           child: Dialog(
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             child: GestureDetector(
               onTap: () {},
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: SingleChildScrollView(

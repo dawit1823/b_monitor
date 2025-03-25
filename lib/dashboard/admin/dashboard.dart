@@ -18,7 +18,9 @@ import 'package:r_and_e_monitor/services/cloud/financial_management/financial_ma
 import 'package:r_and_e_monitor/services/cloud/property/property_view.dart';
 import 'package:r_and_e_monitor/services/cloud/rents/rent_list.dart';
 import 'package:r_and_e_monitor/services/rent/rent_service_old/profile/profile_view.dart';
-import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_overdue_reminder.dart'; // Import the RentOverdueReminder class
+import 'package:r_and_e_monitor/services/rent/rent_service_old/rents/rent_overdue_reminder.dart';
+
+import '../calendar/calendar_converter_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -40,23 +42,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> _checkOverdueRents() async {
     try {
-      // Fetch rents stream and get the first snapshot
       final rentsStream = _rentService.allRents(
         creatorId: AuthService.firebase().currentUser!.id,
       );
       final rents = await rentsStream.first;
 
-      // Update state based on overdue rent calculation
       final hasOverdue = rents.any((rent) {
-        // Exclude rents with 'Contract_Ended'
         if (rent.endContract == 'Contract_Ended') {
           return false;
         }
         final dueDate = DateTime.parse(rent.dueDate);
-        // Check if rent is overdue or near overdue
         return DateTime.now().isAfter(dueDate) ||
             DateTime.now().difference(dueDate).inDays >= -5;
-        // Overdue if past due date
       });
 
       if (mounted) {
@@ -65,7 +62,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
         });
       }
     } catch (e) {
-      // Handle errors gracefully and ensure the button stays hidden in case of failure
       if (mounted) {
         setState(() {
           _hasOverdueRents = false;
@@ -122,8 +118,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
-
-        // backgroundColor: const Color.fromARGB(163, 1, 29, 29),
         actions: [
           PopupMenuButton<MenuAction>(
             iconSize: 35,
@@ -169,8 +163,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               DrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.black
-                      .withValues(alpha: 0.5), // Semi-transparent overlay
+                  color: Colors.black.withValues(alpha: 0.5),
                 ),
                 child: Container(
                   alignment: Alignment.bottomLeft,
@@ -274,13 +267,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   );
                 },
               ),
+              _buildDrawerTile(
+                icon: Icons.calendar_today,
+                title: 'Calendar Converter',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CalendarConverterScreen()),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
       body: Stack(
         children: [
-          // Background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -291,12 +295,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
               child: Container(
-                color: Colors.black.withValues(
-                    alpha: 0.2), // Optional tint for better contrast
+                color: Colors.black.withValues(alpha: 0.2),
               ),
             ),
           ),
-          // Semi-transparent overlay
           Container(
             color: Colors.black.withValues(alpha: 0.1),
           ),
@@ -345,55 +347,63 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(
-                            height: 20), // Add some space before the button
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const RentList()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                Colors.blueAccent, // Customize button color
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32.0, vertical: 16.0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Go to Rent List',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
                         const SizedBox(height: 20),
-                        if (_hasOverdueRents) // Only show if there are overdue rents
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red, // Alerting color
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 32.0, vertical: 16.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                        Column(
+                          children: [
+                            _buildDashboardButton(
+                              context: context,
+                              icon: Icons.list_alt,
+                              label: 'Go to Rent List',
+                              color: Colors.blueAccent,
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const RentList()),
                               ),
                             ),
-                            onPressed: () {
-                              Navigator.push(
+                            const SizedBox(height: 16),
+                            _buildDashboardButton(
+                              context: context,
+                              icon: Icons.account_balance_wallet,
+                              label: 'Financial Management',
+                              color: Colors.teal,
+                              onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>
-                                        const RentOverdueReminder()),
-                              );
-                            },
-                            child: const Text(
-                              'Rent Overdue Reminder',
-                              style:
-                                  TextStyle(fontSize: 18, color: Colors.white),
+                                        FinancialManagementListView()),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                            if (_hasOverdueRents)
+                              _buildDashboardButton(
+                                context: context,
+                                icon: Icons.warning_amber_rounded,
+                                label: 'Rent Overdue Reminder',
+                                color: Colors.red,
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const RentOverdueReminder()),
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+                            _buildDashboardButton(
+                              context: context,
+                              icon: Icons.calendar_today,
+                              label: 'Ethiopian Calendar Converter',
+                              color: Colors.purple,
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        CalendarConverterScreen()),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -402,6 +412,46 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDashboardButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 24, color: Colors.white),
+        label: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color.withValues(alpha: 0.9),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+          elevation: 4,
+          shadowColor: Colors.black.withValues(alpha: 0.3),
+          side: BorderSide(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
       ),
     );
   }

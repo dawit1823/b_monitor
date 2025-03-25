@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:r_and_e_monitor/services/cloud/cloud_data_models.dart';
 import 'package:r_and_e_monitor/services/cloud/employee_services/cloud_rent_service.dart';
@@ -108,116 +110,128 @@ class _CreateOrUpdateFinancialManagementState
             : 'Update Financial Report'),
         backgroundColor: Color.fromARGB(255, 66, 143, 107),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage(
-                'assets/bg/accountant_dashboard.jpg'), // Background image
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _txnTypeController,
-                    decoration: InputDecoration(
-                      labelText: 'Transaction Type',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.8),
-                    ),
-                    validator: (value) {
-                      return (value == null || value.isEmpty)
-                          ? 'Please enter a transaction type'
-                          : null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.8),
-                    ),
-                    validator: (value) {
-                      return (value == null || value.isEmpty)
-                          ? 'Please enter a description'
-                          : null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _totalAmountController,
-                    decoration: InputDecoration(
-                      labelText: 'Total Amount',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.8),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      return (value == null || value.isEmpty)
-                          ? 'Please enter the total amount'
-                          : null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _txnDateController,
-                    decoration: InputDecoration(
-                      labelText: 'Transaction Date',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.8),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () => _selectDate(context),
-                      ),
-                    ),
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                    validator: (value) {
-                      return (value == null || value.isEmpty)
-                          ? 'Please select a transaction date'
-                          : null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _handleSave,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32.0, vertical: 12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      backgroundColor: Color.fromARGB(255, 66, 143, 107),
-                    ),
-                    child: Text(
-                      widget.report == null ? 'Create' : 'Update',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg/accountant_dashboard.jpg'),
+                fit: BoxFit.cover,
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+              child: Container(
+                color: Colors.black.withValues(
+                    alpha: 0.2), // Optional tint for better contrast
               ),
             ),
           ),
-        ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _txnTypeController,
+                        decoration: InputDecoration(
+                          labelText: 'Transaction Type',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        validator: (value) {
+                          return (value == null || value.isEmpty)
+                              ? 'Please enter a transaction type'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _descriptionController,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        validator: (value) {
+                          return (value == null || value.isEmpty)
+                              ? 'Please enter a description'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _totalAmountController,
+                        decoration: InputDecoration(
+                          labelText: 'Total Amount',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.8),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          return (value == null || value.isEmpty)
+                              ? 'Please enter the total amount'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _txnDateController,
+                        decoration: InputDecoration(
+                          labelText: 'Transaction Date',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.8),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () => _selectDate(context),
+                          ),
+                        ),
+                        readOnly: true,
+                        onTap: () => _selectDate(context),
+                        validator: (value) {
+                          return (value == null || value.isEmpty)
+                              ? 'Please select a transaction date'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _handleSave,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 32.0, vertical: 12.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          backgroundColor: Color.fromARGB(255, 66, 143, 107),
+                        ),
+                        child: Text(
+                          widget.report == null ? 'Create' : 'Update',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
